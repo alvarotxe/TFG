@@ -1,0 +1,87 @@
+.proyectos-table-container {
+    display: flex;
+    flex-direction: column;
+    width: 100%;
+    box-shadow:  1px 1px 6px 1px rgba(0, 0, 0, 0.1);  /* Sombra alrededor de la tabla */
+    border-radius: 3px;  /* Bordes redondeados */
+    background-color: #ffffff; /* Fondo blanco */
+  }
+  
+  .proyectos-table-header,
+  .proyectos-table-row {
+    display: flex;
+    width: 100%;
+  }
+  
+  .proyectos-table-column {
+    padding: 8px;
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+    border-bottom: 1px solid #ccc;  /* Línea debajo de cada celda */
+    display: flex;
+    align-items: center;  /* Centrado vertical */
+    text-align: left;   
+  }
+
+  /* Alinear columnas a la izquierda */
+  .proyectos-table-column {
+    justify-content: flex-start;
+  }
+
+  /* Centrar la columna de Última Modificación */
+  .proyectos-table-column:nth-child(1) {
+    justify-content: center;
+  }
+
+  /* Centrar la columna de Última Modificación */
+  .proyectos-table-column:nth-child(5) {
+    justify-content: center;
+  }
+
+  
+  .proyectos-table-header .proyectos-table-column {
+    padding: 15px;
+    font-weight: bold;  /* Negrita en los títulos */
+    border-top-left-radius: 8px;  /* Bordes redondeados arriba a la izquierda */
+    border-top-right-radius: 8px;  /* Bordes redondeados arriba a la derecha */
+  }
+  
+  .proyectos-table-row {
+    transition: background-color 0.3s ease;
+    border-bottom: 1px solid #ccc;  /* Línea debajo de cada fila */
+  }
+  
+  .proyectos-table-row:hover {
+    background-color: #f0f0f0;
+  }
+  
+  .proyectos-paginator {
+    display: flex;
+    justify-content: flex-end;
+    padding: 10px;
+    margin-top: 20px;
+  }
+  
+  .proyectos-paginator button {
+    padding: 8px 16px;
+    margin: 0 4px;
+    background-color: #3f51b5;
+    color: white;
+    border-radius: 3px;
+    border: none;
+    cursor: pointer;
+  }
+  
+  .proyectos-paginator button:disabled {
+    background-color: #ccc;
+  }
+  
+  .proyectos-paginator span {
+    margin: 0 8px;
+  }
+  
+  button {
+    margin-left: 10px;
+  }
+  

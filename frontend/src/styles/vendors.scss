@@ -1,0 +1,28 @@
+/* ----------------------------------------------------------------------------------------------------- */
+/*  @ Import third party library styles here.
+/* ----------------------------------------------------------------------------------------------------- */
+
+/* Perfect scrollbar */
+@import '~perfect-scrollbar/css/perfect-scrollbar.css';
+
+/* Quill */
+@import '~quill/dist/quill.snow.css';
+table.mat-table .mat-column-id {
+    width: 5% !important;
+  }
+  
+  table.mat-table .mat-column-nombre {
+    width: 30% !important;
+  }
+  
+  table.mat-table .mat-column-descripcion {
+    width: 35% !important;
+  }
+  
+  table.mat-table .mat-column-lastModified {
+    width: 20% !important;
+  }
+  
+  table.mat-table .mat-column-opciones {
+    width: 10% !important;
+  }

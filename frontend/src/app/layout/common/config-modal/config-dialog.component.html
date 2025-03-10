@@ -1,0 +1,11 @@
+<h2 mat-dialog-title>Editar Configuración</h2>
+<mat-dialog-content>
+  <mat-form-field class="w-full">
+    <mat-label>Configuración</mat-label>
+    <textarea matInput [(ngModel)]="configValue" rows="5"></textarea>
+  </mat-form-field>
+</mat-dialog-content>
+<mat-dialog-actions align="end">
+  <button mat-button (click)="close()">Cancelar</button>
+  <button mat-raised-button color="primary" (click)="save()">Guardar</button>
+</mat-dialog-actions>

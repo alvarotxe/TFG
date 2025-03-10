@@ -1,0 +1,23 @@
+[
+    {
+    "operación":"Ejemplo",
+    "descripcion": "script de ejemplo",
+    "script_text":"/scripts/ejemplo.js"
+    },
+    {
+    "operación":"ToCsv",
+    "descripcion": "para cambiar a csv",
+    "script_text":"/scripts/toCsv.js"
+    },
+    {
+    "operación":"BorrarColumna",
+    "descripcion": "para borra una columna",
+    "script_text":"/scripts/deleteColumn.js"
+    },
+    {
+    "operación":"nombre 4",
+    "descripcion": "texto libre lo que sea",
+    "script_text":"/scripts/script1.js"
+    }
+]
+    

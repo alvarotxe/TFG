@@ -1,0 +1,159 @@
+.flex {
+    display: flex;
+  }
+  .h-full {
+    height: 100%;
+  }
+  .w-1/2 {
+    width: 50% !important;
+  }
+  .p-4 {
+    padding: 1rem;
+  }
+  .border-gray-300 {
+    border-color: #d1d5db;
+  }
+  .text-lg {
+    font-size: 1.125rem;
+  }
+  .font-bold {
+    font-weight: 700;
+  }
+  .text-gray-500 {
+    color: #6b7280;
+  }
+  .mat-elevation-z2 {
+    box-shadow: 0px 2px 4px rgba(0, 0, 0, 0.2);
+  }
+
+    /* Transiciones para expandir y contraer */
+  .transition-all {
+    transition: width 0.3s ease;
+  }
+
+  .w-full {
+    width: 100% !important;  /* 100% de ancho para pantalla completa */
+  }
+
+  .w-mitad {
+    width: 50% !important;   /* 50% de ancho para el tamaño normal */
+  }
+
+  /* Estilos para la tabla y la columna de mover */
+.mat-elevation-z2 {
+  width: 100%;
+}
+
+.move-column {
+  width: 80px;
+  text-align: center;
+}
+
+.move-icon {
+  cursor: pointer;
+  font-size: 24px;
+  transition: transform 0.3s ease;
+}
+
+.move-icon:hover {
+  transform: scale(1.1);
+}
+
+.mat-row:hover .move-icon {
+  color: #007bff;
+}
+
+/* Estilo para las celdas activas */
+.mat-row {
+  cursor: move;
+}
+  
+.expanded-content {
+  display: flex;
+  justify-content: space-between;
+  padding: 10px;
+  background-color: #f5f5f5;
+}
+
+.input-container,
+.output-container {
+  flex: 1;
+  padding: 10px;
+}
+
+::ng-deep .mat-mdc-form-field-flex {
+  width: var(--mat-select-width, 100%); /* Usa la variable que definimos */
+  padding: var(--mat-select-padding, 0px); /* Usa la variable para el padding */
+  display: inline-flex;
+  align-items: center; /* Aquí se puede ajustar como prefieras */
+}
+
+.hidden-column {
+  display: none;
+}
+.hidden-row {
+  display: none;
+}
+
+mat-icon-button {
+  margin-left: 4px; /* Añadir algo de espacio entre el botón y el contenido */
+  padding: 0;
+  font-size: 18px; /* Reducir el tamaño del ícono si es necesario */
+}
+
+.mat-header-cell button {
+  margin-left: 8px; /* Añadir espacio para el ícono de la cabecera */
+}
+
+.button-container {
+  display: flex;
+  gap: 10px; /* Espacio entre los botones */
+  padding: 10px;
+}
+
+.custom-button {
+  background-color: #f0f0f0; /* Fondo gris claro */
+  color: #6c757d; /* Texto gris oscuro */
+  border-radius: 4px; /* Bordes redondeados */
+  padding: 5px 10px; /* Espaciado interno */
+  display: flex;
+  align-items: center;
+  gap: 8px; /* Espacio entre icono y texto */
+}
+
+.custom-icon {
+  color: #6c757d !important; /* Color del icono */
+}
+
+.moving-mode {
+  background-color: #e0f7fa; /* Un azul claro */
+  color: #007bff; /* Color del texto cuando esté activado */
+  border: 2px solid #007bff; /* Color del borde cuando está activado */
+  border-radius: 4px; /* Asegúrate de que el borde sea redondeado si lo deseas */
+}
+
+.moving-mode mat-header-cell, .moving-mode mat-cell {
+  cursor: move; /* Para dar la sensación de que puedes mover las filas */
+}
+
+.moving-mode .custom-icon {
+  color: #007bff !important; /* Color del icono cuando el botón esté activado */
+}
+
+.hidden-mode {
+  background-color: #e0f7fa; /* Un azul claro */
+  color: #007bff; /* Color del texto cuando esté activado */
+  border: 2px solid #007bff; /* Color del borde cuando está activado */
+  border-radius: 4px; /* Asegúrate de que el borde sea redondeado si lo deseas */
+}
+
+.hidden-mode mat-header-cell, .moving-mode mat-cell {
+  cursor: move; /* Para dar la sensación de que puedes mover las filas */
+}
+
+.hidden-mode .custom-icon {
+  color: #007bff !important; /* Color del icono cuando el botón esté activado */
+}
+
+
+

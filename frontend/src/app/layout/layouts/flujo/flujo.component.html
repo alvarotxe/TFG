@@ -1,0 +1,228 @@
+<div class="flex h-full w-full">
+  <!-- Panel izquierdo -->
+  <div 
+    [ngClass]="{'w-full': isExpanded, 'w-1/2 border-r border-gray-300': !isExpanded}" 
+    class="transition-all duration-300 flex flex-col"
+    *ngIf="!isExpandedRight"
+  >
+    <!-- Encabezado -->
+    <div class="p-4 flex items-center justify-between border-b border-gray-300">
+      <h2 class="text-lg font-bold">{{ 'dataPreprocessing' | transloco }}</h2>
+      <div class="flex items-center">
+        <button mat-stroked-button color="primary" (click)="openOperationsSelector()">
+          {{ 'selectOperations' | transloco }}
+        </button>
+        <!-- Botones de ejecutar y guardar -->
+        <button mat-raised-button color="primary" (click)="executeOperationsSequentially()" class="ml-2">
+          {{ 'execute' | transloco }}
+        </button>
+        <button mat-raised-button color="accent" (click)="saveOperations()" class="ml-2">
+          {{ 'guardar' | transloco }}
+        </button>
+        <button mat-icon-button (click)="toggleExpandLeft()">
+          <mat-icon>{{ isExpanded ? 'close_fullscreen' : 'fullscreen' }}</mat-icon>
+        </button>
+      </div>
+    </div>
+
+    <!-- Contenido principal -->
+    <div class="p-4 flex-1">
+      <!-- Botones de ejecutar y guardar antes de la tabla 
+      <div class="flex justify-end space-x-2 mb-4">
+        <button mat-raised-button color="primary" (click)="executeOperationsSequentially()">
+          {{ 'execute' | transloco }}
+        </button>
+        <button mat-raised-button color="accent" (click)="saveOperations()">
+          {{ 'guardar' | transloco }}
+        </button>
+      </div>
+      <div *ngIf="addedOperations.length === 0">
+        <p class="text-gray-500">{{ 'noOperationsAdded' | transloco }}</p>
+      </div>
+      -->
+      <div *ngIf="addedOperations.length > 0">
+        <div class="button-container">
+          <!-- Botón de Visibilidad -->
+          <button mat-button (click)="onEye()" class="custom-button" [ngClass]="{ 'hidden-mode': !mostrarFilasAdicionales }" [disabled]="isMoveOrderMode">
+            <mat-icon class="custom-icon">{{ mostrarFilasAdicionales ? 'visibility' : 'visibility_off' }}</mat-icon>
+            {{ mostrarFilasAdicionales ? 'Esconder visibilidad' : 'Mostrar visibilidad' }}
+          </button>
+          <!-- Botón de Mover Orden -->
+          <button mat-button (click)="onMoveOrder()" class="custom-button" [ngClass]="{ 'moving-mode': isMoveOrderMode }">
+            <mat-icon class="custom-icon">swap_vert</mat-icon>
+            Mover Orden
+          </button>
+        </div>           
+        <mat-table [dataSource]="addedOperations" class="mat-elevation-z2" [ngClass]="{'moving-mode': isMoveOrderMode}"><!-- cdkDropList (cdkDropListDropped)="drop($event)"-->
+          <ng-container matColumnDef="activate">
+            <mat-header-cell *matHeaderCellDef>{{ 'activate' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation">
+              <mat-slide-toggle
+                *ngIf="operation.isActiveColumnVisible"
+                (change)="activateOperation(operation)"
+                [checked]="operation.active === 1"
+              >
+              </mat-slide-toggle>
+            </mat-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="name">
+            <mat-header-cell *matHeaderCellDef>{{ 'operationName' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation">
+              <span *ngIf="operation.isMainRow">{{ operation.name }}</span>
+            </mat-cell>
+          </ng-container>
+
+          <ng-container matColumnDef="entrada">
+            <mat-header-cell *matHeaderCellDef>{{ 'entrada' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation ; let i = index"  class="entrada-cell">
+              <!-- Aseguramos que el mat-select se muestre para cada entrada -->
+              <ng-container *ngIf="operation.isMainRow; else additionalRow">
+              <mat-form-field appearance="fill" *ngIf="operation.ent?.[0]" [ngStyle]="{ 'width': '100%' }">
+                <mat-label [placeholder]="'Entrada'"></mat-label>
+                <mat-select 
+                  [(ngModel)]="operation.entradaValue[0]"
+                  (selectionChange)="onFileSelected($event, operation, i)"
+                  class="custom-select"
+                  [style.width.%]="100">
+                  <!-- Aseguramos que las opciones sean todas las posibles -->
+                  <mat-option *ngFor="let file of this.operation.availableFiles" [value]="file">{{ file }}</mat-option>
+                </mat-select>
+              </mat-form-field>
+              </ng-container>
+              <ng-template #additionalRow>
+                <mat-form-field appearance="fill" *ngIf="operation.ent?.length > 0" [ngStyle]="{ 'width': '100%' }">
+                  <mat-label [placeholder]="'Entrada'"></mat-label>
+                  <mat-select
+                    [(ngModel)]="operation.entradaValue[0]"
+                    (selectionChange)="onFileSelected($event, operation, i)"
+                    class="custom-select"
+                    [style.width.%]="100">
+                    <!-- Aseguramos que las opciones sean todas las posibles -->
+                    <mat-option *ngFor="let file of this.operation.availableFiles" [value]="file">{{ file }}</mat-option>
+                  </mat-select>
+                </mat-form-field>
+              </ng-template>
+            </mat-cell>
+          </ng-container>
+          
+
+          <ng-container matColumnDef="salida">
+            <mat-header-cell *matHeaderCellDef>{{ 'salida' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation">
+              <div class="flex items-center">
+                <!-- Mostrar solo la primera salida en la fila principal -->
+                <ng-container *ngIf="operation.isMainRow; else additionalRow">
+                  <button *ngIf="operation.salidaValue?.[0]" 
+                          mat-icon-button 
+                          (click)="downloadOutputFile(operation.salidaValue[0], proyectoDataID.nombre, proyectoDataID.id)" 
+                          aria-label="Descargar archivo">
+                    <mat-icon>download</mat-icon>
+                  </button>
+                  <span *ngIf="operation.isMainRow" class="ml-2">{{ operation.salidaValue?.[0] || 'Sin salida' }}</span>
+                </ng-container>
+          
+                <!-- Mostrar las demás salidas en filas adicionales -->
+                <ng-template #additionalRow>
+                  <button *ngIf="operation.salidaValue?.length > 0" 
+                          mat-icon-button 
+                          (click)="downloadOutputFile(operation.salidaValue[0], proyectoDataID.nombre, proyectoDataID.id)" 
+                          aria-label="Descargar archivo">
+                    <mat-icon>download</mat-icon>
+                  </button>
+                  <span class="ml-2">{{ operation.salidaValue?.[0]}}</span>
+                </ng-template>
+              </div>
+            </mat-cell>
+          </ng-container>          
+                  
+
+          <ng-container matColumnDef="confi">
+            <mat-header-cell *matHeaderCellDef>
+              {{ 'confi' | transloco }}
+              <button mat-icon-button (click)="clearConfig()" aria-label="Borrar todo" style="padding: 0;">
+                <mat-icon svgIcon="eraser"></mat-icon>
+              </button>
+            </mat-header-cell>
+            <mat-cell *matCellDef="let operation">
+              <div class="flex items-center">
+                <button *ngIf="operation.isConfigColumnVisible" mat-icon-button (click)="clearConfigForRow(operation)" aria-label="Borrar" style="padding: 0;">
+                  <mat-icon svgIcon="eraser"></mat-icon>
+                </button>
+                <span *ngIf="operation.isMainRow" class="cursor-pointer ml-2 w-full" (click)="openConfigModal(operation)">
+                  {{ operation.confi || 'Click para editar' }}
+                </span>
+              </div>
+            </mat-cell>
+          </ng-container>                   
+          
+
+          <ng-container matColumnDef="step">
+            <mat-header-cell *matHeaderCellDef>{{ 'step' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation">
+              <div *ngIf="isMoveOrderMode">
+                <button mat-icon-button (click)="moveOperation(operation, 'up')" [disabled]="isFirst(operation)">
+                  <mat-icon>arrow_upward</mat-icon> <!-- Icono de flecha arriba -->
+                </button>
+                <button mat-icon-button (click)="moveOperation(operation, 'down')" [disabled]="isLast(operation)">
+                  <mat-icon>arrow_downward</mat-icon> <!-- Icono de flecha abajo -->
+                </button>
+              </div>              
+              <button *ngIf="!isMoveOrderMode" mat-stroked-button color="primary" (click)="onSingleExecute(operation)">
+                {{ 'ejecutar' | transloco }}
+              </button>
+            </mat-cell>
+          </ng-container>
+          
+          <mat-header-row *matHeaderRowDef="['activate','name', 'entrada', 'salida', 'confi', 'step']"></mat-header-row>
+          <mat-row *matRowDef="let row; columns: ['activate', 'name', 'entrada', 'salida', 'confi', 'step']" [ngClass]="{'hidden-row': row.isHidden}"></mat-row><!--cdkDrag 
+            (cdkDragStarted)="onDragStarted()"-->
+        </mat-table>
+      </div>
+      <div *ngIf="showOperationsSelector" class="mt-4">
+        <app-select-dialog (selectionChange)="onOperationsUpdated($event)"></app-select-dialog>
+      </div>
+    </div>
+  </div>
+
+  <!-- Panel derecho -->
+  <div [ngClass]="{'w-full': isExpandedRight, 'w-1/2': !isExpandedRight}" class="transition-all duration-300" *ngIf="!isExpanded">
+    <div class="p-4 flex items-center justify-between border-b border-gray-300">
+      <h2 class="text-lg font-bold">{{ 'result' | transloco }}</h2>
+      <div class="flex items-center">
+        <button mat-stroked-button color="primary" (click)="clearResults()">{{ 'clearResults' | transloco }}</button>
+        <button mat-icon-button (click)="reloadResults()">
+          <mat-icon>refresh</mat-icon>
+        </button>
+        <button mat-icon-button (click)="toggleExpandRight()">
+          <mat-icon>{{ isExpandedRight ? 'close_fullscreen' : 'fullscreen' }}</mat-icon>
+        </button>
+      </div>
+    </div>
+  
+    <div *ngIf="results.length === 0">
+      <p class="text-gray-500">{{ 'noResults' | transloco }}</p>
+    </div>
+  
+    <div *ngIf="results.length > 0" class="mt-4">
+      <div *ngFor="let result of results">
+        <div>
+          <h3>{{ 'result_operation' | transloco }}: {{ result.operationName }}</h3>
+          <pre class="bg-gray-100 p-4 rounded">{{ result.logs }}</pre>
+  
+          <!-- Mostrar botones de descarga para las salidas 
+          <div *ngIf="result.output && result.output.length > 0" class="flex space-x-2 mt-2">
+            <div *ngFor="let salida of result.output; let i = index">
+              <button mat-stroked-button color="primary" (click)="downloadCSV(salida, result.operationName, i + 1)">
+                {{ 'descargar_salida' | transloco }} {{ i + 1 }}
+              </button>              
+            </div>
+          </div>
+          -->
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  
+</div>

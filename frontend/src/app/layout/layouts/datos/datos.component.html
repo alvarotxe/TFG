@@ -1,0 +1,92 @@
+<div class="flex justify-center">
+  <form
+    [formGroup]="proyectoForm"
+    (ngSubmit)="onSubmit($event)"
+    class="w-full max-w-4xl p-6"
+  >
+    <div class="flex flex-col space-y-6">
+      <!-- Fila 1: Nombre del Proyecto y Archivo -->
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        <!-- Nombre del Proyecto -->
+        <div class="flex flex-col">
+          <mat-form-field class="w-full">
+            <mat-label>{{ 'nombreProyecto' | transloco }}</mat-label>
+            <input
+              matInput
+              formControlName="nombre"
+              placeholder="{{ 'nombreProyecto' | transloco }}"
+            />
+            <mat-error *ngIf="proyectoForm.get('nombre').hasError('required')">
+              {{ 'nombreRequerido' | transloco }}
+            </mat-error>
+          </mat-form-field>
+        </div>
+
+        <!-- Archivo -->
+        <div class="flex flex-col">
+          <mat-label>{{ 'archivoProyecto' | transloco }}</mat-label>
+          <input
+            #fileInput
+            type="file"
+            (change)="onFileChange($event)"
+            formControlName="archivo"
+            style="display: none"
+            multiple
+          />
+          <button mat-button type="button" (click)="openFileInput($event)" class="bg-indigo-500 text-white w-full">
+            {{ 'seleccionarArchivo' | transloco }}
+          </button>
+          <div *ngIf="fileNames.length > 0" class="mt-2 text-sm text-gray-700">
+            <strong>{{ 'Archivos' | transloco }}:</strong>
+            <ul>
+              <li *ngFor="let file of fileNames; let i = index" class="flex items-center justify-between">
+                <span>{{ file }}</span>
+          
+                <div class="flex space-x-2">
+                  <!-- Botón para descargar -->
+                  <button mat-icon-button color="primary" (click)="downloadFile(file, proyectoDataID.nombre, proyectoDataID.id)">
+                    <mat-icon>download</mat-icon>
+                  </button>
+          
+                  <!-- Botón para eliminar -->
+                  <button mat-icon-button color="warn" (click)="removeFile(i)">
+                    <mat-icon>delete</mat-icon>
+                  </button>
+                </div>
+              </li>
+            </ul>
+          </div>          
+        </div>        
+      </div>
+
+      <!-- Fila 2: Descripción del Proyecto -->
+      <div class="flex flex-col">
+        <mat-form-field class="w-full">
+          <mat-label>{{ 'descripcionProyecto' | transloco }}</mat-label>
+          <textarea
+            matInput
+            formControlName="descripcion"
+            placeholder="{{ 'descripcionProyecto' | transloco }}"
+            rows="4"
+          ></textarea>
+          <mat-error *ngIf="proyectoForm.get('descripcion').hasError('required')">
+            {{ 'descripcionRequerida' | transloco }}
+          </mat-error>
+        </mat-form-field>
+      </div>
+
+      <!-- Fila de Botones -->
+      <div class="flex justify-end space-x-4">
+        <!-- Botón Cancelar -->
+        <button mat-stroked-button color="primary" type="button" (click)="onCancel($event)">
+          {{ 'cancelar' | transloco }}
+        </button>
+      
+        <!-- Botón Enviar -->
+        <button mat-raised-button color="primary" type="submit" [disabled]="!isFormModified()">
+          {{modificar}}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

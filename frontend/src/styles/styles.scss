@@ -1,0 +1,56 @@
+/* ----------------------------------------------------------------------------------------------------- */
+/*  @ Import/write your custom styles here.
+/*  @ Styles from this file will override 'vendors.scss' and Fuse's base styles.
+/* ----------------------------------------------------------------------------------------------------- */
+/* Asegúrate de aplicar los estilos tanto a las celdas de encabezado como a las de las filas */
+::ng-deep .mat-elevation-z8.custom-table .mat-header-row .mat-column-id,
+::ng-deep .mat-elevation-z8.custom-table .mat-row .mat-column-id {
+  width: 5% !important;
+  text-align: center !important;
+}
+
+::ng-deep .mat-elevation-z8.custom-table .mat-header-row .mat-column-nombre,
+::ng-deep .mat-elevation-z8.custom-table .mat-row .mat-column-nombre {
+  width: 20% !important;
+  text-align: left !important;
+}
+
+::ng-deep .mat-elevation-z8.custom-table .mat-header-row .mat-column-descripcion,
+::ng-deep .mat-elevation-z8.custom-table .mat-row .mat-column-descripcion {
+  width: 25% !important;
+  text-align: left !important;
+}
+
+::ng-deep .mat-elevation-z8.custom-table .mat-header-row .mat-column-lastModified,
+::ng-deep .mat-elevation-z8.custom-table .mat-row .mat-column-lastModified {
+  width: 25% !important;
+  text-align: center !important;
+}
+
+::ng-deep .mat-elevation-z8.custom-table .mat-header-row .mat-column-opciones,
+::ng-deep .mat-elevation-z8.custom-table .mat-row .mat-column-opciones {
+  width: 25% !important;
+  text-align: right !important;
+}
+
+/* Asegúrate de que todo el formulario ocupe el ancho completo */
+.mat-form-field {
+  width: 100%; /* Asegura que cada campo ocupe todo el ancho disponible */
+}
+
+button.mat-button {
+  background-color: #6366f1; /* Color de fondo para el botón */
+  color: white; /* Color del texto */
+}
+
+button.mat-raised-button {
+  background-color: #6366f1; /* Color de fondo para el botón de envío */
+  color: white; /* Color del texto */
+}
+
+input[type="file"] {
+  display: none; /* Ocultar el input file */
+}
+
+
+

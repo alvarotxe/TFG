@@ -1,0 +1,13 @@
+<h1 mat-dialog-title>{{ 'cancelar_cambios' | transloco }}</h1>
+<div mat-dialog-content class="mat-body">
+  <p class="message">{{ 'mensaje_cancelacion' | transloco }}</p>
+</div>
+
+<div mat-dialog-actions class="action-buttons">
+  <button mat-raised-button color="warn" (click)="onClose('cancel')" class="cancel-btn">
+    <mat-icon>cancel</mat-icon> {{ 'no' | transloco }}
+  </button>
+  <button mat-raised-button color="primary" (click)="onCancel()" class="confirm-btn">
+    <mat-icon>check_circle</mat-icon> {{ 'si' | transloco }}
+  </button>
+</div>

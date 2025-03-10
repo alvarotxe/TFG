@@ -1,0 +1,76 @@
+.dialog-container {
+    display: flex;
+    flex-direction: column;
+    padding: 20px;
+  }
+  
+  mat-table {
+    margin-top: 20px;
+    width: 100%;
+  }
+  
+  .dialog-actions {
+    display: flex;
+    justify-content: flex-end;
+    margin-top: 20px;
+  }
+  
+  mat-form-field {
+    width: 100%;
+  }
+  .search-bar-container {
+    display: flex;
+    align-items: center; /* Alinea verticalmente los elementos al centro */
+    justify-content: flex-start; /* Asegura que la búsqueda y los botones estén alineados a la izquierda */
+    gap: 10px; /* Espacio entre la barra de búsqueda y los botones */
+    width: 100%;
+  }
+  
+  .search-bar {
+    margin-top:20px;
+    flex: 1;
+    height: 70px; /* Asegura que la barra de búsqueda tenga la misma altura que los botones */
+  }
+  
+  .buttons-container {
+    display: flex;
+    gap: 10px;
+    align-items: center; /* Alinea los botones verticalmente al centro */
+    justify-items: center;
+  }
+  
+  /* Limitar la descripción a un tamaño específico */
+  .description-cell {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  .description-text {
+    max-width: 150px; /* Limitar el ancho de la descripción */
+    white-space: nowrap; /* No hacer salto de línea */
+    overflow: hidden; /* Ocultar lo que no cabe */
+    text-overflow: ellipsis; /* Mostrar puntos suspensivos */
+    transition: all 0.3s ease-in-out;
+  }
+
+  /* Cuando se expanda la descripción */
+  .description-text.expanded {
+    max-width: none; /* Remover el límite de ancho */
+    white-space: normal; /* Permitir salto de línea */
+    text-overflow: unset; /* Quitar los puntos suspensivos */
+  }
+
+  /* Estilos para el botón de ojo */
+  button[mat-icon-button] {
+    margin-left: 10px; /* Separación del ícono del ojo */
+  }
+
+  mat-tooltip {
+    max-width: 500px; /* Para mostrar el tooltip con una descripción más larga */
+  }
+  .popover-content {
+    padding: 10px;
+    max-width: 400px; /* Limitar el ancho del popover */
+    word-wrap: break-word; /* Asegura que las palabras largas no se salgan del contenedor */
+  }
