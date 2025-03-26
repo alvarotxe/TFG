@@ -23,6 +23,7 @@ import { ProyectoService } from '../../../services/proyectos.service'
 interface Operation {
     name: string;
     active: boolean;
+    config: string;
     selectedControl: FormControl;
     draggable?: boolean;
      // Propiedad adicional
@@ -126,7 +127,7 @@ export class SelectDialogComponent {
 
     // Identificar las operaciones que han sido desmarcadas
     const operationsToRemove = this.selectedOperations.filter(op => !selectedOperationIds.includes(op.id)).map(op => op.id);
-
+    console.log(selectedOperations);
     // Guardar las operaciones seleccionadas
     this.operationsService.saveOperationsToProject(this.projectId, selectedOperations, this.archivo).subscribe(
       response => {

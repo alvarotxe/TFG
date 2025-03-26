@@ -30,7 +30,7 @@ const crearProyectos = async (req, res) => {
 
     const projectId = result.insertId;
     const carpetaNombre = `id${projectId}${nombre.charAt(0).toLowerCase()}`;
-    const carpetaPath = path.join('../',process.env.BASE_PROJECTS_PATH, carpetaNombre);
+    const carpetaPath = path.join(process.env.BASE_PROJECTS_PATH, carpetaNombre);
     console.log(carpetaPath);
 
     try {
@@ -57,6 +57,91 @@ const crearProyectos = async (req, res) => {
   });
 };
 
+const duplicarProyecto = async (req, res) => {
+  const { id } = req.params;
+
+  // Buscar el proyecto original en la base de datos
+  const sql = 'SELECT * FROM proyectos WHERE id = ?';
+  db.query(sql, [id], (err, result) => {
+    if (err) {
+      console.error('Error al buscar el proyecto original:', err);
+      return res.status(500).send('Error al buscar el proyecto');
+    }
+
+    if (result.length === 0) {
+      return res.status(404).send('Proyecto no encontrado');
+    }
+
+    const proyectoOriginal = result[0];
+
+    // Crear un nuevo proyecto duplicado con el mismo nombre y descripción
+    const nuevoNombre = proyectoOriginal.nombre + ' - Copy';
+    const nuevoDescripcion = proyectoOriginal.descripcion;
+    const archivos = proyectoOriginal.archivo.split(','); // Se asume que los archivos están guardados con nombres separados por comas
+
+    const fechaCreacion = new Date().toISOString();
+    const sqlInsert = 'INSERT INTO proyectos (nombre, descripcion, archivo, last_modified) VALUES (?, ?, ?, ?)';
+    const archivoNames = archivos.join(','); // Mantener los nombres de los archivos
+
+    db.query(sqlInsert, [nuevoNombre, nuevoDescripcion, archivoNames, fechaCreacion], (err, result) => {
+      if (err) {
+        console.error('Error al insertar el proyecto duplicado:', err);
+        return res.status(500).send('Error al guardar el proyecto duplicado');
+      }
+
+      const projectId = result.insertId;
+      const carpetaNombre = `id${projectId}${nuevoNombre.charAt(0).toLowerCase()}`;
+      const carpetaPath = path.join(process.env.BASE_PROJECTS_PATH, carpetaNombre);
+      const carpetaProyectoOriginal = path.join(process.env.BASE_PROJECTS_PATH, `id${id}${proyectoOriginal.nombre.charAt(0).toLowerCase()}`);
+
+      try {
+        if (!fs.existsSync(carpetaPath)) {
+          fs.mkdirSync(carpetaPath, { recursive: true });
+        }
+
+        // Obtener todos los archivos de la carpeta del proyecto original
+        const archivosOriginales = fs.readdirSync(carpetaProyectoOriginal);
+
+        // Copiar todos los archivos del proyecto original a la nueva carpeta
+        archivosOriginales.forEach(file => {
+          const archivoOrigen = path.join(carpetaProyectoOriginal, file);
+          const archivoDestino = path.join(carpetaPath, file);
+          fs.copyFileSync(archivoOrigen, archivoDestino); // Copiar archivo
+        });
+
+        // Duplicar las operaciones asociadas con este proyecto en la tabla proyecto_operacion
+        const sqlOperaciones = 'SELECT * FROM proyecto_operacion WHERE id_proyecto = ?';
+        db.query(sqlOperaciones, [id], (err, operaciones) => {
+          if (err) {
+            console.error('Error al obtener las operaciones del proyecto:', err);
+            return res.status(500).send('Error al obtener las operaciones del proyecto');
+          }
+
+          // Insertar las operaciones para el nuevo proyecto
+          const sqlInsertOperaciones = 'INSERT INTO proyecto_operacion (id_proyecto, id_operacion, entrada, salida, confi, activa, orden) VALUES (?, ?, ?, ?, ?, ?, ?)';
+          operaciones.forEach(operacion => {
+            db.query(sqlInsertOperaciones, [projectId, operacion.id_operacion, operacion.entrada, null, operacion.confi, operacion.activa, operacion.orden], (err, result) => {
+              if (err) {
+                console.error('Error al insertar operación duplicada:', err);
+                return res.status(500).send('Error al insertar operaciones duplicadas');
+              }
+            });
+          });
+
+          // Enviar respuesta exitosa
+          res.status(200).send({
+            message: 'Proyecto duplicado con éxito',
+            projectId: projectId,
+            carpeta: carpetaPath,
+          });
+        });
+      } catch (error) {
+        console.error('Error al crear la carpeta o copiar los archivos:', error);
+        return res.status(500).send('Error al duplicar los archivos del proyecto');
+      }
+    });
+  });
+};
 
 
 const getProyectos = async (req, res) => {
@@ -89,7 +174,7 @@ const getProyectoById = (req, res) => {
       return res.status(404).send('Proyecto no encontrado');
     }
     const carpetaNombre = `id${id}${result[0].nombre.charAt(0).toLowerCase()}`;
-    const inputFilesResolved = path.resolve('../',process.env.BASE_PROJECTS_PATH, carpetaNombre, '/', result[0].archivo);
+    const inputFilesResolved = path.resolve(process.env.BASE_PROJECTS_PATH, carpetaNombre, '/', result[0].archivo);
     result[0].ruta = inputFilesResolved;
     res.status(200).json(result[0]); // Devolver el primer elemento (único proyecto)
   });
@@ -125,7 +210,7 @@ const actualizarProyecto = async (req, res) => {
 
     const proyecto = result[0];
     const carpetaNombre = `id${id}${proyecto.nombre.charAt(0).toLowerCase()}`;
-    const carpetaPath = path.join('../',process.env.BASE_PROJECTS_PATH, carpetaNombre);
+    const carpetaPath = path.join(process.env.BASE_PROJECTS_PATH, carpetaNombre);
 
     // Obtener archivos actuales en la BD (separados por coma)
     let archivosActuales = proyecto.archivo ? proyecto.archivo.split(',') : [];
@@ -194,7 +279,7 @@ const borrarProyecto = async (req, res) => {
 
     const proyecto = result[0];
     const carpetaNombre = `id${id}${proyecto.nombre.charAt(0).toLowerCase()}`;
-    const carpetaPath = path.join('../',process.env.BASE_PROJECTS_PATH, carpetaNombre);
+    const carpetaPath = path.join(process.env.BASE_PROJECTS_PATH, carpetaNombre);
 
     // Eliminar el archivo si existe
     if (proyecto.archivo) {
@@ -209,7 +294,7 @@ const borrarProyecto = async (req, res) => {
     }
 
     // Eliminar la carpeta del proyecto si existe
-    fs.rmdir(carpetaPath, { recursive: true }, (err) => {
+    fs.rm(carpetaPath, { recursive: true }, (err) => {
       if (err) {
         console.error('Error al eliminar la carpeta:', err);
       }
@@ -280,5 +365,5 @@ const buscarProyectos = (req, res) => {
 
 
 module.exports = {
-  crearProyectos,getProyectos,getProyectoById, actualizarProyecto, borrarProyecto, buscarProyectos
+  crearProyectos,getProyectos,getProyectoById, actualizarProyecto, duplicarProyecto, borrarProyecto, buscarProyectos
 };

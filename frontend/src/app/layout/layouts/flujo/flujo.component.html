@@ -45,37 +45,36 @@
           <!-- Botón de Visibilidad -->
           <button mat-button (click)="onEye()" class="custom-button" [ngClass]="{ 'hidden-mode': !mostrarFilasAdicionales }" [disabled]="isMoveOrderMode">
             <mat-icon class="custom-icon">{{ mostrarFilasAdicionales ? 'visibility' : 'visibility_off' }}</mat-icon>
-            {{ mostrarFilasAdicionales ? 'Esconder visibilidad' : 'Mostrar visibilidad' }}
+            {{ mostrarFilasAdicionales ? 'Esconder detalle' : 'Mostrar detalle' }}
           </button>
           <!-- Botón de Mover Orden -->
           <button mat-button (click)="onMoveOrder()" class="custom-button" [ngClass]="{ 'moving-mode': isMoveOrderMode }">
             <mat-icon class="custom-icon">swap_vert</mat-icon>
-            Mover Orden
+            {{ !isMoveOrderMode ? 'Mover Orden' : 'Desactivar Mover Orden' }}
           </button>
         </div>           
         <mat-table [dataSource]="addedOperations" class="mat-elevation-z2" [ngClass]="{'moving-mode': isMoveOrderMode}"><!-- cdkDropList (cdkDropListDropped)="drop($event)"-->
-          <ng-container matColumnDef="activate">
-            <mat-header-cell *matHeaderCellDef>{{ 'activate' | transloco }}</mat-header-cell>
-            <mat-cell *matCellDef="let operation">
+          <ng-container matColumnDef="activate" class="small-column">
+            <mat-header-cell *matHeaderCellDef class="small-header">{{ 'activate' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation" class="small-headerr">
               <mat-slide-toggle
                 *ngIf="operation.isActiveColumnVisible"
                 (change)="activateOperation(operation)"
-                [checked]="operation.active === 1"
-              >
+                [checked]="operation.active === 1">
               </mat-slide-toggle>
             </mat-cell>
-          </ng-container>
+          </ng-container>          
 
           <ng-container matColumnDef="name">
-            <mat-header-cell *matHeaderCellDef>{{ 'operationName' | transloco }}</mat-header-cell>
-            <mat-cell *matCellDef="let operation">
+            <mat-header-cell *matHeaderCellDef class="small-header1">{{ 'operationName' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation" class="small-header11">
               <span *ngIf="operation.isMainRow">{{ operation.name }}</span>
             </mat-cell>
           </ng-container>
 
           <ng-container matColumnDef="entrada">
-            <mat-header-cell *matHeaderCellDef>{{ 'entrada' | transloco }}</mat-header-cell>
-            <mat-cell *matCellDef="let operation ; let i = index"  class="entrada-cell">
+            <mat-header-cell *matHeaderCellDef class="small-header2">{{ 'entrada' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation ; let i = index"  class="small-header22">
               <!-- Aseguramos que el mat-select se muestre para cada entrada -->
               <ng-container *ngIf="operation.isMainRow; else additionalRow">
               <mat-form-field appearance="fill" *ngIf="operation.ent?.[0]" [ngStyle]="{ 'width': '100%' }">
@@ -108,8 +107,8 @@
           
 
           <ng-container matColumnDef="salida">
-            <mat-header-cell *matHeaderCellDef>{{ 'salida' | transloco }}</mat-header-cell>
-            <mat-cell *matCellDef="let operation">
+            <mat-header-cell *matHeaderCellDef class="small-header3">{{ 'salida' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation"class="small-header33">
               <div class="flex items-center">
                 <!-- Mostrar solo la primera salida en la fila principal -->
                 <ng-container *ngIf="operation.isMainRow; else additionalRow">
@@ -138,13 +137,13 @@
                   
 
           <ng-container matColumnDef="confi">
-            <mat-header-cell *matHeaderCellDef>
+            <mat-header-cell *matHeaderCellDef class="small-header4">
               {{ 'confi' | transloco }}
               <button mat-icon-button (click)="clearConfig()" aria-label="Borrar todo" style="padding: 0;">
                 <mat-icon svgIcon="eraser"></mat-icon>
               </button>
             </mat-header-cell>
-            <mat-cell *matCellDef="let operation">
+            <mat-cell *matCellDef="let operation" class="small-header44">
               <div class="flex items-center">
                 <button *ngIf="operation.isConfigColumnVisible" mat-icon-button (click)="clearConfigForRow(operation)" aria-label="Borrar" style="padding: 0;">
                   <mat-icon svgIcon="eraser"></mat-icon>
@@ -158,8 +157,8 @@
           
 
           <ng-container matColumnDef="step">
-            <mat-header-cell *matHeaderCellDef>{{ 'step' | transloco }}</mat-header-cell>
-            <mat-cell *matCellDef="let operation">
+            <mat-header-cell *matHeaderCellDef class="small-header5">{{ 'step' | transloco }}</mat-header-cell>
+            <mat-cell *matCellDef="let operation" class="small-header55">
               <div *ngIf="isMoveOrderMode">
                 <button mat-icon-button (click)="moveOperation(operation, 'up')" [disabled]="isFirst(operation)">
                   <mat-icon>arrow_upward</mat-icon> <!-- Icono de flecha arriba -->

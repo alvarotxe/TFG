@@ -32,6 +32,10 @@ export class ProyectoService {
     return this.http.post<any>(`${this.apiUrl}`, formData);
   }
 
+  duplicateProyecto(id: string): Observable<any> {
+    return this.http.post<any>(`${this.apiUrl}/duplicar/${id}`, {});
+  }
+
   getProyectos(): Observable<any[]> {
     return this.http.get<any[]>(`${this.apiUrl}/proyecto`);
   }

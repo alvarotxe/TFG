@@ -101,11 +101,11 @@ export class OperacionesComponent implements AfterViewInit
             this.operacionesData = resultSets;
             this.updateTableData();
           } else {
-            this.snackBar.open('No se encontraron proyectos', 'Cerrar', { duration: 3000 });
+            this.snackBar.open('No se encontraron operaciones', 'Cerrar', { duration: 3000 });
           }
         },
         (error) => {
-          this.snackBar.open('Error al buscar proyectos', 'Cerrar', { duration: 3000 });
+          this.snackBar.open('Error al buscar operaciones', 'Cerrar', { duration: 3000 });
         }
       );
     } else {
@@ -139,7 +139,7 @@ export class OperacionesComponent implements AfterViewInit
         this.operacionService.deleteOperacion(element.id).subscribe(
           () => {
             // Traducir el mensaje para el snackBar
-            const snackBarMessage = this.translocoService.translate('proyecto_borrado_correctamente');
+            const snackBarMessage = this.translocoService.translate('operacion_borrada_correctamente');
             const snackBarClose = this.translocoService.translate('close');
             this.operacionesData = this.operacionesData.filter(proyecto => proyecto.id !== element.id);
             this.dataSource.data = this.operacionesData;
@@ -151,7 +151,7 @@ export class OperacionesComponent implements AfterViewInit
             this.router.navigate(['/operaciones']);
           },
           (error) => {
-            console.error('Error al eliminar el proyecto', error);
+            console.error('Error al eliminar el operacion', error);
           }
         );
       }

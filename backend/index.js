@@ -8,9 +8,14 @@ const db = require('./database/configdb');
 const app = express();
 
 const router = express();
+const corsOptions = {
+    origin: '*',  // Permite todas las solicitudes de cualquier origen
+    methods: ['GET', 'POST', 'PUT', 'DELETE'],  // Permite los métodos que estás utilizando
+    allowedHeaders: ['Content-Type', 'Authorization']  // Agrega encabezados adicionales si es necesario
+};
 
 app.use(bodyParser.json());
-app.use(cors()); 
+app.use(cors(corsOptions)); 
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 

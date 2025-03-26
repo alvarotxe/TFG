@@ -53,19 +53,19 @@
                 <!-- CONTENT GOES HERE -->
                 <div class="proyectos-table-container">
                     <div class="proyectos-table-header">
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 5%' }">{{ 'tabla.id' | transloco }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 20%' }">{{ 'tabla.nombre' | transloco }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 45%' }">{{ 'tabla.descripcion' | transloco }}</div>
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 10%' }">{{ 'tabla.entrsal' | transloco }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 15%' }">{{ 'tabla.script' | transloco }}</div>
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 15%' }">{{ 'tabla.opciones' | transloco }}</div>
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 10%' }">{{ 'tabla.opciones' | transloco }}</div>
                     </div>
                   
                     <div *ngFor="let operacion of dataSource.data" class="proyectos-table-row" (click)="onEditar(operacion)" style="cursor: pointer;">
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 5%' }">{{ operacion.id }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 20%' }">{{ operacion.operacion }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 45%' }">{{ operacion.descripcion }}</div>
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 10%' }">{{ operacion.entradas }} / {{ operacion.salidas }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 15%' }">{{ operacion.script_text }}</div>
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 15%' }">
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 10%' }">
                         <button mat-icon-button color="accent" aria-label="Editar" (click)="onEditar(operacion)">
                           <mat-icon>edit</mat-icon>
                         </button>

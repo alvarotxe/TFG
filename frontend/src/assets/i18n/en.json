@@ -1,6 +1,7 @@
 {
     "bienvenido": "Welcome back",
     "proyectos": "Projects",
+    "operaciones": "Operations",
     "titulo_proyectos": "Projects",
     "titulo_operaciones": "Operations",
     "boton_aniadir": "ADD",
@@ -9,6 +10,7 @@
         "nombre": "Name",
         "descripcion": "Description",
         "ultima_modificacion": "Last Modified",
+        "entrsal": "E/S",
         "script": "Script",
         "opciones": "Options"
     },
@@ -53,6 +55,7 @@
     "created": "Project created successfully",
     "proyecto_actualizado_correctamente": "Project updated successfully",
     "proyecto_borrado_correctamente": "Project deleted successfully",
+    "operacion_borrada_correctamente": "Operation deleted successfully",
     "close": "Close",
     "move": "Move",
     "clearResults": "Clear Results",

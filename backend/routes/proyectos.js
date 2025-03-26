@@ -1,11 +1,11 @@
 const { Router } = require('express');
-const { crearProyectos,getProyectos,getProyectoById, actualizarProyecto, borrarProyecto, buscarProyectos } = require('../controllers/proyectos');
+const { crearProyectos,getProyectos,getProyectoById, duplicarProyecto, actualizarProyecto, borrarProyecto, buscarProyectos } = require('../controllers/proyectos');
 const multer = require('multer');
 const path = require('path');
 const fs = require('fs');
 const storage = multer.diskStorage({
     destination: (req, file, cb) => {
-      cb(null,'../',process.env.BASE_PROJECTS_PATH);  // Define la carpeta donde se guardarán los archivos
+      cb(null,process.env.BASE_PROJECTS_PATH);  // Define la carpeta donde se guardarán los archivos
     },
     filename: (req, file, cb) => {
       cb(null, file.originalname);  // Define el nombre único del archivo
@@ -23,7 +23,7 @@ router.get('/download/:filename/:name/:id', (req, res) => {
   // Construir el nombre de la carpeta
   const carpetaNombre = `id${id}${name.charAt(0).toLowerCase()}`;
   // Construir la ruta completa al archivo
-  const rutaDescarga = path.resolve(__dirname, '../../proyectos', carpetaNombre, filename); // Usa path.resolve para obtener la ruta absoluta
+  const rutaDescarga = path.resolve(process.env.BASE_PROJECTS_PATH, carpetaNombre, filename); // Usa path.resolve para obtener la ruta absoluta
   console.log('Ruta del archivo:', rutaDescarga);
   // Comprobar si el archivo existe antes de enviarlo
   fs.stat(rutaDescarga, (err, stats) => {
@@ -45,6 +45,7 @@ router.get('/download/:filename/:name/:id', (req, res) => {
 
 router.post('/', upload.array('archivo[]',5), crearProyectos);
 router.get('/buscar', buscarProyectos);
+router.post('/duplicar/:id', duplicarProyecto);
 
 router.put('/updateProyecto/:id',upload.array('archivo[]'), actualizarProyecto);
 

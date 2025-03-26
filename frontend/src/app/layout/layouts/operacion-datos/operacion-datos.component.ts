@@ -44,6 +44,7 @@ export class OperacionDatosComponent {
   proyectoId: string | null = null;
   proyectoData: any = null;
   proyectoDataID: any = null;
+  configuracion: string;
   isEditMode: boolean = false; 
   modificar: string = '';
   selectedFiles: File[] = [];
@@ -59,6 +60,7 @@ export class OperacionDatosComponent {
       script_text: [null],
       entradas: [0, [Validators.required]], // Nuevo campo
       salidas: [0, [Validators.required]],  // Nuevo campo
+      confi: ['']
     });
   
     this.route.queryParams.subscribe((params) => {
@@ -133,6 +135,53 @@ export class OperacionDatosComponent {
       if (this.proyectoDataID?.script_text) {
         this.deletedFiles = [this.proyectoDataID.script_text]; // Marcar el anterior como eliminado
       }
+      
+      const formData = new FormData();
+    formData.append('operacion', this.proyectoForm.get('operacion')?.value);
+    formData.append('descripcion', this.proyectoForm.get('descripcion')?.value);
+    formData.append('entradas', this.proyectoForm.get('entradas')?.value); // Nuevo campo
+    formData.append('salidas', this.proyectoForm.get('salidas')?.value);   // Nuevo campo
+    formData.append('confi', this.proyectoForm.get('confi')?.value);
+  
+    // Enviar archivos nuevos (si hay)
+    if (this.selectedFiles.length > 0) {
+      this.selectedFiles.forEach(file => {
+        formData.append('script_text', file, file.name);
+      });
+    } else if (this.fileNames.length > 0) {
+      formData.append('existingFiles', JSON.stringify(this.fileNames));
+    }
+  
+    // Enviar archivos eliminados (si hay)
+    if (this.deletedFiles.length > 0) {
+      formData.append('deletedFiles', JSON.stringify(this.deletedFiles));
+    }
+
+    this.operationService.runScript(selectedFile.name, formData).subscribe(
+      (response) => {
+          console.log('Respuesta del servidor:', response);
+          
+          // Convertir la cadena JSON que está en response.output a un objeto
+          try {
+              const outputData = JSON.parse(response.output);
+              this.configuracion = outputData.configData.configexample;
+              // Ahora puedes acceder a las propiedades del objeto
+              this.proyectoForm.patchValue({
+                operacion: outputData.configData.name, // Nombre del Proyecto
+                descripcion: outputData.configData.description, // Descripción
+                entradas: outputData.configData.input, // Entrada
+                salidas: outputData.configData.output, // Salida
+                confi: outputData.configData.configexample
+            });
+            console.log('Formulario actualizado con los datos:', this.proyectoForm.value);
+          } catch (error) {
+              console.error('Error al parsear JSON:', error);
+          }
+      },
+      (error) => {
+          console.error('Error al ejecutar el script:', error);
+      }
+  );  
     }
   }    
   
@@ -146,8 +195,9 @@ export class OperacionDatosComponent {
     const formData = new FormData();
     formData.append('operacion', this.proyectoForm.get('operacion')?.value);
     formData.append('descripcion', this.proyectoForm.get('descripcion')?.value);
-    formData.append('entradas', this.proyectoForm.get('entradas')?.value); // Nuevo campo
-    formData.append('salidas', this.proyectoForm.get('salidas')?.value);   // Nuevo campo
+    formData.append('entradas', this.proyectoForm.get('entradas')?.value);
+    formData.append('salidas', this.proyectoForm.get('salidas')?.value);
+    formData.append('confi', this.proyectoForm.get('confi')?.value);
   
     // Enviar archivos nuevos (si hay)
     if (this.selectedFiles.length > 0) {
@@ -166,7 +216,7 @@ export class OperacionDatosComponent {
     if (this.isEditMode) {
       this.operationService.updateOperation(this.proyectoId, formData).subscribe(
         (response) => {
-          this.snackBar.open('Proyecto actualizado correctamente', 'Cerrar', {
+          this.snackBar.open('Operacion actualizada correctamente', 'Cerrar', {
             duration: 3000,
             panelClass: ['snack-bar-success'],
           });
@@ -179,7 +229,7 @@ export class OperacionDatosComponent {
     } else {
       this.operationService.addOperation(formData).subscribe(
         (response) => {
-          this.snackBar.open('Proyecto creado correctamente', 'Cerrar', {
+          this.snackBar.open('Operacion creada correctamente', 'Cerrar', {
             duration: 3000,
             panelClass: ['snack-bar-success'],
           });

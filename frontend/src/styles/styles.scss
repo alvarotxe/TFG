@@ -52,5 +52,77 @@ input[type="file"] {
   display: none; /* Ocultar el input file */
 }
 
+.small-header {
+  flex:auto;
+  justify-content: flex-start;
+  width: 11%;
+}
+.small-headerr {
+  flex:none;
+  width: 11%;
+  padding: none;
+}
 
+.small-header1 {
+  flex:auto;
+  justify-content: flex-start;
+  width: 15%;
+  padding-left: 0%;
+}
+.small-header11 {
+  flex:none;
+  width: 15%;
+  padding-left: 0%;
+}
 
+.small-header2 {
+  flex:auto;
+  justify-content: flex-start;
+  width: 23%;
+  padding-left: 0%;
+}
+.small-header22 {
+  flex:none;
+  width: 23%;
+  padding-left: 0%;
+}
+
+.small-header3 {
+  flex:auto;
+  width: 20%;
+  padding-left: 0%;
+}
+.small-header33 {
+  flex:none;
+  width: 20%;
+  padding-left: 0%;
+}
+
+.small-header4 {
+  flex:auto;
+  width: 20%;
+  padding-left: 0%;
+}
+.small-header44 {
+  flex:none;
+  width: 20%;
+  padding-left: 0%;
+}
+
+.small-header5 {
+  flex:auto;
+  justify-content: center;
+  align-items: center;
+  width: 11%;
+  padding-left: 0%;
+}
+.small-header55 {
+  flex: none;
+  width: 11%;
+  padding-left: 0%;
+  justify-content: center;
+  align-items: center;
+}
+mat-slide-toggle {
+  transform: scale(0.8); /* Reduce el tamaño del switch */
+}

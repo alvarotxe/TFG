@@ -53,24 +53,27 @@
                 <!-- CONTENT GOES HERE -->
                 <div class="proyectos-table-container">
                     <div class="proyectos-table-header">
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 5%' }">{{ 'tabla.id' | transloco }}</div>
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 20%' }">{{ 'tabla.nombre' | transloco }}</div>
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 50%' }">{{ 'tabla.descripcion' | transloco }}</div>
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 25%' }">{{ 'tabla.nombre' | transloco }}</div>
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 45%' }">{{ 'tabla.descripcion' | transloco }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 15%' }">{{ 'tabla.ultima_modificacion' | transloco }}</div>
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 10%' }">{{ 'tabla.opciones' | transloco }}</div>
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 15%' }">{{ 'tabla.opciones' | transloco }}</div>
                     </div>
                   
                     <div *ngFor="let proyecto of dataSource.data" class="proyectos-table-row" (click)="onEditar(proyecto)" style="cursor: pointer;">
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 5%' }">{{ proyecto.id }}</div>
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 20%' }">{{ proyecto.nombre }}</div>
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 50%' }">{{ proyecto.descripcion }}</div>
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 25%' }">{{ proyecto.nombre }}</div>
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 45%' }">{{ proyecto.descripcion }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 15%' }">{{ proyecto.last_modified | date: 'dd/MM/yyyy HH:mm' }}</div>
-                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 10%' }">
-                        <button mat-icon-button color="accent" aria-label="Editar" (click)="onEditar(proyecto)">
-                          <mat-icon>edit</mat-icon>
+                      <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 15%' }">
+                        <button mat-icon-button color="primary" (click)="onDuplicar(proyecto); $event.stopPropagation()" class="icon-button">
+                            <mat-icon class="small-icon">note_add</mat-icon> <!-- Nota -->
                         </button>
-                        <button mat-icon-button color="warn" aria-label="Eliminar" (click)="onEliminar(proyecto); $event.stopPropagation()">
-                          <mat-icon>delete</mat-icon>
+                        <!-- Botón de editar -->
+                        <button mat-icon-button color="accent" aria-label="Editar" (click)="onEditar(proyecto); $event.stopPropagation()" class="icon-button">
+                            <mat-icon class="small-icon">edit</mat-icon> <!-- Editar -->
+                        </button>
+                        <!-- Botón de eliminar -->
+                        <button mat-icon-button color="warn" aria-label="Eliminar" (click)="onEliminar(proyecto); $event.stopPropagation()" class="icon-button">
+                            <mat-icon class="small-icon">delete</mat-icon> <!-- Eliminar -->
                         </button>
                       </div>
                     </div>

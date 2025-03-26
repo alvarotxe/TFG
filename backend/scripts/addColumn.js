@@ -1,8 +1,61 @@
 const fs = require('fs');
 const csv = require('csv-parser');
 const path = require('path');
-
 const COMMON_EXTENSIONS = ['.csv', '.txt', '.json'];
+
+// [ PARÁMETROS DE ENTRADA ]
+const args = process.argv.slice(2);
+if (args.length === 1 && (args[0] === '-c' || args[0] === '-C')) {
+  console.log(JSON.stringify({
+    version: "1.0.0",
+    configData : {
+      verDF4IA:"1.0",
+      name: "Añadir columnas",
+      description: "Añadir columnas a un archivo",
+      input:1,
+      output: 1,
+      configexample:'{\"columnName\":[\"truth\"], \"value\":[0]}'
+    }
+  }, null, 2));
+  process.exit(0);
+}
+if (args.length < 2) {
+  console.error('! ERROR: INPUT !');
+  process.exit(1);
+}
+
+try {
+  const inputFile = findFileWithExtension(args[0]);
+  const outputFile = args[1]; // EL ARCHIVO DE SALIDA PUEDE SER CREADO, NO NECESITA EXISTIR.
+
+  // CONFIGURACIÓN POR DEFECTO
+  let config = {
+    addColumn: {
+      columnName: ["truth"],
+      value: [0]
+    }  
+  };
+
+  // LEE CONFIGURACIÓN
+  if (args[2]) {
+    try {
+      const rawConfig = args[2];
+      config = JSON.parse(rawConfig); // INSTENTA PARSEAR LA CONFIGURACIÓN
+      console.log('Configuración cargada correctamente:', config);
+    } catch (error) {
+      console.error('Configuración malformateada. Usando configuración por defecto:', config);
+    }
+  } 
+  else {
+    console.log('Configuración no proporcionada. Usando configuración por defecto:', config);
+  }
+  main(inputFile, outputFile, config);
+} 
+catch (error) {
+  console.error('ERROR:', error.message);
+  process.exit(1);
+}
+
 
 // [ BUSCA ARCHIVO CON EXTENSIÓN ]
 function findFileWithExtension(filePath) {
@@ -76,45 +129,6 @@ function addColumns(data, columnNames, columnValues) {
     });
     return newRow;
   });
-}
-
-// [ PARÁMETROS DE ENTRADA ]
-const args = process.argv.slice(2);
-if (args.length < 2) {
-  console.error('! ERROR: INPUT !');
-  process.exit(1);
-}
-
-try {
-  const inputFile = findFileWithExtension(args[0]);
-  const outputFile = args[1]; // EL ARCHIVO DE SALIDA PUEDE SER CREADO, NO NECESITA EXISTIR.
-
-  // CONFIGURACIÓN POR DEFECTO
-  let config = {
-    addColumn: {
-      columnName: ["truth"],
-      value: [0]
-    }  
-  };
-
-  // LEE CONFIGURACIÓN
-  if (args[2]) {
-    try {
-      const rawConfig = args[2];
-      config = JSON.parse(rawConfig); // INSTENTA PARSEAR LA CONFIGURACIÓN
-      console.log('Configuración cargada correctamente:', config);
-    } catch (error) {
-      console.error('Configuración malformateada. Usando configuración por defecto:', config);
-    }
-  } 
-  else {
-    console.log('Configuración no proporcionada. Usando configuración por defecto:', config);
-  }
-  main(inputFile, outputFile, config);
-} 
-catch (error) {
-  console.error('ERROR:', error.message);
-  process.exit(1);
 }
 
 // [ MAIN ]

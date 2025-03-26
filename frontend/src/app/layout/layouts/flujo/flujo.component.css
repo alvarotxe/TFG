@@ -105,6 +105,10 @@ mat-icon-button {
   margin-left: 8px; /* Añadir espacio para el ícono de la cabecera */
 }
 
+::ng-deep .mat-header-cell{
+  flex:auto !important; /* Añadir espacio para el ícono de la cabecera */
+}
+
 .button-container {
   display: flex;
   gap: 10px; /* Espacio entre los botones */

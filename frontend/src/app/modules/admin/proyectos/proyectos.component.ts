@@ -118,6 +118,18 @@ export class ProyectoComponent implements AfterViewInit
     this.router.navigate(['/datos-proyecto'])
   }
 
+  onDuplicar(proyecto: any) {
+    this.proyectoService.duplicateProyecto(proyecto.id).subscribe(
+      (response) => {
+        console.log('Proyecto duplicado:', response);
+        // Aquí podrías agregar la lógica para actualizar la vista o hacer algo más después de duplicar el proyecto
+      },
+      (error) => {
+        console.error('Error al duplicar el proyecto:', error);
+      }
+    );
+  }  
+
   onEditar(element: any): void {
     this.router.navigate(['/datos-proyecto'], { queryParams: { id: element.id } });
   }

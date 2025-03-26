@@ -29,18 +29,14 @@
     justify-content: flex-start;
   }
 
+  
   /* Centrar la columna de Última Modificación */
-  .proyectos-table-column:nth-child(1) {
-    justify-content: center;
-  }
-
-  /* Centrar la columna de Última Modificación */
-  .proyectos-table-column:nth-child(4) {
+  .proyectos-table-column:nth-child(3) {
     justify-content: center;
   }
   
   /* Centrar la columna de Última Modificación */
-  .proyectos-table-column:nth-child(5) {
+  .proyectos-table-column:nth-child(4) {
     justify-content: center;
   }
 
@@ -89,3 +85,12 @@
     margin-left: 10px;
   }
   
+ /* Reducir el tamaño de los iconos */
+.small-icon {
+  font-size: 18px; /* Ajusta el tamaño que prefieras */
+}
+
+/* Reducir el espaciado entre los botones de los iconos */
+.icon-button {
+  margin: 0 4px; /* Ajusta el margen entre los botones */
+}

@@ -126,7 +126,7 @@ export class FlujoComponent{
         this.addedOperations = projectOperations.map((projOp: any) => {
           const archivosDelProyecto = this.proyectoDataID.archivo.split(',');
           this.projectFile = archivosDelProyecto;
-
+          console.log(projOp);
           const matchingOperation = allOperations.find((op: any) => op.id === projOp.id_operacion);
           let salidaValues = [];
           let ent2 = [];

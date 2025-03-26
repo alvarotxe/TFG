@@ -45,6 +45,11 @@ export class OperationsService {
     return this.http.post<any>(`${this.baseUrl}/guardar`, operations);
   }
 
+  runScript(script: string, formData: FormData): Observable<any> {
+    const body = {script,formData};
+    return this.http.post<any>(`${this.baseUrl}/execute-script`, formData);
+  }  
+
   runOperation(rute: string, inputFilePath: string, outputFilePath: string, additionalText: string, id:any, name:string): Observable<any> {
     const body = { rute, inputFilePath, outputFilePath, additionalText, id, name};
     return this.http.post<any>(`${this.baseUrl}/run`, body);
@@ -73,6 +78,7 @@ export class OperationsService {
       nombre_operacion: operation.operacion,
       archivo: archivo || null,  // Asumiendo que tienes un campo de archivo si aplica
       orden: index + 1,  // El orden es el índice + 1
+      confi: operation.confi
     }));
 
     return this.http.post<any>(`${this.baseUrl}/saveOperations`, operationsData);

@@ -4,9 +4,10 @@ const fs = require('fs');
 const db = require('../database/configdb');
 
 const crearOperacion = async (req, res) => {
-    const { operacion, descripcion, entradas, salidas } = req.body;
+    const { operacion, descripcion, entradas, salidas, confi } = req.body;
+    console.log(req.body);
     const archivos = req.files || [];
-
+    console.log(archivos)
     if (!operacion || !descripcion) {
         return res.status(400).send('Todos los campos son requeridos.');
     }
@@ -24,33 +25,12 @@ const crearOperacion = async (req, res) => {
         let nuevoNombre = `${base}${ext}`;
         let archivoDestino = path.join(carpetaPath, nuevoNombre);
 
-        let contador = 1;
-        while (fs.existsSync(archivoDestino)) {
-            nuevoNombre = `${base}${contador}${ext}`;
-            archivoDestino = path.join(carpetaPath, nuevoNombre);
-            contador++;
-        }
-
-        try {
-            // COPIAR el archivo en vez de renombrarlo directamente
-            await fs.promises.copyFile(file.path, archivoDestino);
-
-            // ELIMINAR el archivo original de forma segura sin lanzar errores
-            try {
-                await fs.promises.rm(file.path, { force: true });
-            } catch (err) {
-                console.warn(`No se pudo eliminar ${file.path}, pero no afecta la operación.`);
-            }
-
-            archivosGuardados.push(`${nuevoNombre}`);
-        } catch (error) {
-            console.error('Error al mover el archivo:', error);
-            return res.status(500).send('Error al mover el archivo');
-        }
+        archivosGuardados.push(`${nuevoNombre}`);
+       
     }
 
-    const sql = 'INSERT INTO operaciones (operacion, descripcion, script_text, entradas, salidas) VALUES (?, ?, ?, ?, ?)';
-    const values = [operacion, descripcion, archivosGuardados.join(','), entradas, salidas];
+    const sql = 'INSERT INTO operaciones (operacion, descripcion, script_text, entradas, salidas, confi) VALUES (?, ?, ?, ?, ?, ?)';
+    const values = [operacion, descripcion, archivosGuardados.join(','), entradas, salidas, confi];
 
     db.query(sql, values, (err, result) => {
         if (err) {
@@ -116,26 +96,14 @@ const actualizarOperacion = async (req, res) => {
             
                 // Obtener todos los archivos en la carpeta
                 let archivosEnCarpeta = fs.readdirSync(carpetaPath);
-            
-                // Filtrar solo los archivos que coincidan con el mismo nombre base y extensión
-                let coincidencias = archivosEnCarpeta
-                    .filter(nombre => nombre.startsWith(base) && nombre.endsWith(ext))
-                    .map(nombre => {
-                        // Extraer el número final si existe
-                        let match = nombre.match(/(\d+)(?=\.\w+$)/);
-                        return match ? parseInt(match[1], 10) : 0; // Si no tiene número, es el archivo base (0)
-                    });
-            
-                // Determinar el siguiente número disponible correctamente
-                let siguienteNumero = coincidencias.length > 0 ? Math.max(...coincidencias) + 1 : 1;
                 
                 // Generar el nuevo nombre con el número correcto
-                let nuevoNombre = `${base}${siguienteNumero}${ext}`;
+                let nuevoNombre = `${base}${ext}`;
                 let archivoDestino = path.join(carpetaPath, nuevoNombre);
             
                 try {
                     await fs.promises.copyFile(file.path, archivoDestino);
-                    await fs.promises.rm(file.path, { force: true });
+                    
             
                     archivosGuardados.push(nuevoNombre);
                 } catch (error) {
@@ -226,7 +194,7 @@ async function getOperations(req, res) {
     try {
 
         // Consulta SQL para obtener las operaciones de la tabla "operaciones"
-        const sql = 'SELECT id, operacion, descripcion, script_text, entradas, salidas FROM operaciones';
+        const sql = 'SELECT id, operacion, descripcion, script_text, entradas, salidas, confi FROM operaciones';
 
         db.query(sql, (err, results) => {
             if (err) {
@@ -273,7 +241,7 @@ async function getOperationsByProject(req, res) {
     try {
         // Consulta SQL para obtener las operaciones asociadas a un proyecto específico
         const sql = `
-            SELECT o.id, o.operacion, o.descripcion, o.script_text, o.entradas, o.salidas
+            SELECT o.id, o.operacion, o.descripcion, o.script_text, o.entradas, o.salidas, o.confi
             FROM operaciones o
             JOIN proyecto_operacion po ON o.id = po.id_operacion
             WHERE po.id_proyecto = ?
@@ -343,7 +311,6 @@ async function saveOperationsToProject(req, res) {
     if (!projectId) {
         return res.status(400).json({ error: 'Falta el id del proyecto' });
     }
-    console.log('Project ID:', projectId);
 
     // Obtener las operaciones que ya están asociadas al proyecto
     const existingOperationsQuery = `SELECT id_operacion FROM proyecto_operacion WHERE id_proyecto = ${projectId}`;
@@ -361,7 +328,6 @@ async function saveOperationsToProject(req, res) {
 
             // Filtrar las operaciones a insertar, eliminando las que ya existen
             const operationsToInsert = req.body.filter(operation => !existingOperationIds.includes(operation.id_operacion));
-
             if (operationsToInsert.length === 0) {
                 return res.status(400).json({ error: 'Todas las operaciones ya están asociadas al proyecto' });
             }
@@ -380,7 +346,6 @@ async function saveOperationsToProject(req, res) {
                 // Construir la consulta SQL para insertar las operaciones con el orden secuencial
                 const insertQueries = operationsToInsert.map((operation) => {
                     lastOrder++;  // Incrementar el orden antes de asignarlo a la siguiente operación
-                    
                     const archivoArray = Array.isArray(operation.archivo) ? operation.archivo : [operation.archivo];
                     const archivoJSON = JSON.stringify(archivoArray);
                     return {
@@ -389,13 +354,14 @@ async function saveOperationsToProject(req, res) {
                         nombre_operacion: operation.nombre_operacion,
                         archivo: archivoJSON,  // Si no hay archivo, se guarda como NULL
                         orden: lastOrder,  // Asignar el nuevo orden
+                        confi: operation.confi
                     };
                 });
 
                 // Construir la consulta de inserción
                 const sql = `INSERT INTO proyecto_operacion (id_proyecto, id_operacion, entrada, salida, confi, activa, orden)
                             VALUES
-                            ${insertQueries.map(op => `(${op.id_proyecto}, ${op.id_operacion}, '${op.archivo}', 'null', '', 0, ${op.orden})`).join(', ')}`;
+                            ${insertQueries.map(op => `(${op.id_proyecto}, ${op.id_operacion}, '${op.archivo}', 'null', '${op.confi}', 0, ${op.orden})`).join(', ')}`;
 
                 // Ejecutar la consulta SQL para insertar las operaciones
                 db.query(sql, (err, results) => {
@@ -656,12 +622,12 @@ async function runOperation(req, res) {
     console.log(inputFilePaths);
     // Generar las rutas absolutas para los archivos de entrada
     const inputFilesResolved = inputFilePaths.map(filePath => 
-        path.join('../',process.env.BASE_PROJECTS_PATH, carpetaNombre, '/', filePath)
+        path.join(process.env.BASE_PROJECTS_PATH, carpetaNombre, '/', filePath)
     );
 
     console.log('Archivos de entrada:', inputFilesResolved);
 
-    const outputDir = path.resolve('../',process.env.BASE_PROJECTS_PATH, carpetaNombre);
+    const outputDir = path.resolve(process.env.BASE_PROJECTS_PATH, carpetaNombre);
     console.log('Directorio de salida:', outputDir);
 
     // Crear el directorio si no existe
@@ -768,8 +734,62 @@ async function runOperation(req, res) {
     });
 }
 
+async function runScript(req, res) {
+    const archivos = req.files || [];
+    if (archivos.length === 0) {
+        return res.status(400).json({ error: "No se recibió ningún archivo válido" });
+    }
+
+    // Proceso para guardar el script en su carpeta
+    const carpetaPath = path.join(process.env.BASE_SCRIPTS_PATH);
+    if (!fs.existsSync(carpetaPath)) {
+        fs.mkdirSync(carpetaPath, { recursive: true });
+    }
+
+    let archivoDestino;
+    let archivosGuardados = [];
+
+    for (const file of archivos) {
+        let ext = path.extname(file.originalname);
+        let base = path.basename(file.originalname, ext);
+        let nuevoNombre = `${base}${ext}`;
+        archivoDestino = path.join(carpetaPath, nuevoNombre);
+
+        archivosGuardados.push(`${nuevoNombre}`);
+    }
+
+    // Ejecutar el script con Node.js
+    const proceso = spawn('node', [path.join(process.env.BASE_SCRIPTS_PATH, archivosGuardados.toString()), '-c']);
+
+    let output = '';
+    proceso.stdout.on('data', (data) => {
+        output += data.toString();
+    });
+
+    proceso.stderr.on('data', (data) => {
+        console.error(`Error: ${data}`);
+    });
+
+    proceso.on('close', async (code) => {
+        // Después de que el proceso termine, eliminar el archivo
+        try {
+            await fs.promises.rm(archivoDestino, { force: true });
+            console.log('Archivo temporal eliminado');
+        } catch (err) {
+            console.error('Error al eliminar el archivo temporal:', err);
+        }
+
+        // Enviar la respuesta dependiendo del código de salida
+        if (code === 0) {
+            res.json({ message: 'Script ejecutado correctamente', output });
+        } else {
+            res.status(500).json({ error: 'Error ejecutando el script' });
+        }
+    });
+}
 
 
 
 
-module.exports = { runOperation,crearOperacion,eliminarTodasLasEntradas,borrarOperacion,actualizarOperacion,getOperations,getOperationById,saveOperationsToProject,removeOperationsFromProject,updateOperationsForProject,getOperationsByProject,getOperationsByProjects, saveOperations };
+
+module.exports = { runOperation,crearOperacion,runScript,eliminarTodasLasEntradas,borrarOperacion,actualizarOperacion,getOperations,getOperationById,saveOperationsToProject,removeOperationsFromProject,updateOperationsForProject,getOperationsByProject,getOperationsByProjects, saveOperations };
