@@ -190,6 +190,58 @@ const borrarOperacion = async (req, res) => {
     }
 };
 
+const duplicarOperacion = async (req, res) => {
+    const { id } = req.params;
+    if (!id) {
+        return res.status(400).send('El ID de la operación es requerido.');
+    }
+
+    // Primero, obtener los datos de la operación que se va a duplicar
+    const selectSql = 'SELECT * FROM proyecto_operacion WHERE id_operacion = ?';
+    db.query(selectSql, [id], (err, result) => {
+        if (err) {
+            console.error('Error al obtener la operación:', err);
+            return res.status(500).send('Error al obtener la operación');
+        }
+
+        if (result.length === 0) {
+            return res.status(404).send('Operación no encontrada');
+        }
+
+        const operacion = result[0];
+        const idProyecto = operacion.id_proyecto;
+
+        // Paso 1: Obtener el máximo valor de "orden" de las operaciones existentes
+        const maxOrdenSql = 'SELECT MAX(orden) AS maxOrden FROM proyecto_operacion WHERE id_proyecto = ?';
+        db.query(maxOrdenSql, [idProyecto], (err, maxResult) => {
+            if (err) {
+                console.error('Error al obtener el orden máximo:', err);
+                return res.status(500).send('Error al obtener el orden máximo');
+            }
+
+            // Paso 2: Asignar el siguiente orden (evitando añadir un número extra)
+            const siguienteOrden = maxResult[0].maxOrden + 1;
+
+            // Paso 3: Insertar la nueva operación duplicada con el siguiente orden
+            const insertSql = 'INSERT INTO proyecto_operacion (id_proyecto, id_operacion, entrada, salida, confi, activa, orden) VALUES (?, ?, ?, ?, ?, ?, ?)';
+            const values = [idProyecto, operacion.id_operacion, operacion.entrada, operacion.salida, operacion.confi, operacion.activa, siguienteOrden];
+
+            db.query(insertSql, values, (err, result) => {
+                if (err) {
+                    console.error('Error al duplicar la operación:', err);
+                    return res.status(500).send('Error al duplicar la operación');
+                }
+
+                res.status(200).send({
+                    message: 'Operación duplicada con éxito',
+                });
+            });
+        });
+    });
+};
+
+
+
 async function getOperations(req, res) {
     try {
 
@@ -273,7 +325,7 @@ async function getOperationsByProjects(req, res) {
     try {
         // Consulta SQL para obtener las operaciones asociadas a un proyecto específico
         const sql = `
-            SELECT id_operacion, entrada, salida, confi, activa, orden
+            SELECT id, id_operacion, entrada, salida, confi, activa, orden
             FROM proyecto_operacion 
             WHERE id_proyecto = ?
             ORDER BY orden ASC
@@ -417,56 +469,103 @@ async function removeOperationsFromProject(req, res) {
 }
 
 async function updateOperationsForProject(req, res) {
-    const projectId = req.params.id;  // Asegúrate de que el ID del proyecto se obtiene correctamente de los parámetros
-    const updatedOperations = req.body.operations;  // Accede al array de operaciones desde el cuerpo de la solicitud
+    const projectId = req.params.id;
+    const updatedOperations = req.body.operations;
+
     if (!projectId || !updatedOperations || updatedOperations.length === 0) {
         return res.status(400).json({ error: 'Faltan parámetros o no se proporcionaron operaciones para actualizar' });
     }
 
-    // Iteramos sobre cada operación a actualizar
     try {
-        // Para cada operación en el array de operaciones a actualizar
-        for (let operation of updatedOperations) {
-            const {id_operacion, entradaValue, archivo, confi, active, orden } = operation;
-            const projectIdInt = parseInt(projectId, 10);
+        const projectIdInt = parseInt(projectId, 10);
+
+        // Agrupar por id_operacion y obtener TODOS los IDs disponibles en la BD para cada id_operacion
+        const operationIdsMap = {};  // Guardará { id_operacion: [lista de IDs] }
+
+        for (const operation of updatedOperations) {
+            const { id_operacion } = operation;
+
             if (!id_operacion) {
-                return res.status(400).json({ error: 'Falta id_operacion en los datos proporcionados' });
+                return res.status(400).json({ error: 'Falta el ID de la operación' });
             }
+
+            // Si ya tenemos los IDs de esta operación, no los buscamos otra vez
+            if (!operationIdsMap[id_operacion]) {
+                const getIdSql = `
+                    SELECT id FROM proyecto_operacion
+                    WHERE id_proyecto = ? AND id_operacion = ?
+                    ORDER BY id ASC;
+                `;
+
+                const ids = await new Promise((resolve, reject) => {
+                    db.query(getIdSql, [projectIdInt, id_operacion], (err, results) => {
+                        if (err) {
+                            reject(err);
+                        } else {
+                            resolve(results.map(row => row.id));  // Guardamos todos los IDs en orden
+                        }
+                    });
+                });
+
+                if (ids.length === 0) {
+                    return res.status(404).json({ error: `Operación no encontrada con id_operacion=${id_operacion}` });
+                }
+
+                operationIdsMap[id_operacion] = ids;  // Guardamos los IDs disponibles
+            }
+        }
+        console.log(updatedOperations);
+        // Ahora recorremos updatedOperations y asignamos el ID correcto de la base de datos
+        for (const operation of updatedOperations) {
+            const { id_operacion, entradaValue, confi, active, orden, positionIndex } = operation;
+
+            // Obtener el ID correcto (tomamos el primero disponible y lo eliminamos de la lista)
+            const idList = operationIdsMap[id_operacion];
+            const id = idList.shift();  // Sacamos el primer ID de la lista
+
+            if (!id) {
+                return res.status(404).json({ error: `No hay más registros disponibles para id_operacion=${id_operacion}` });
+            }
+
             const entrada = Array.isArray(entradaValue) ? entradaValue : [entradaValue];
             const entradaJSON = JSON.stringify(entrada);
 
-            // Consulta SQL para actualizar la operación asociada al proyecto
-            const sql = `
+            // Actualizar la operación
+            const updateSql = `
                 UPDATE proyecto_operacion
                 SET 
                     entrada = COALESCE(?, entrada),
                     confi = COALESCE(?, confi),
                     activa = COALESCE(?, activa),
-                    orden = COALESCE(?, orden)
-                WHERE id_proyecto = ? AND id_operacion = ?
+                    orden = COALESCE(?, orden),
+                    positionIndex = COALESCE(?, positionIndex)
+                WHERE id = ? AND id_proyecto = ?;
             `;
 
-            // Ejecutamos la consulta SQL
+            
+
             await new Promise((resolve, reject) => {
-                db.query(sql, [entradaJSON, confi, active, orden, projectIdInt, id_operacion], (err, results) => {
+                db.query(updateSql, [entradaJSON, confi, active, orden, positionIndex, id, projectIdInt], (err, results) => {
                     if (err) {
-                        console.error('Error al actualizar las operaciones:', err);
-                        reject(err);  // Si hay error, rechazamos la promesa
+                        reject(err);
                     } else {
-                        resolve(results);  // Si todo es correcto, resolvemos la promesa
+                        resolve(results);
                     }
                 });
             });
         }
 
-        // Si la actualización fue exitosa para todas las operaciones
         res.json({ message: 'Operaciones actualizadas correctamente' });
 
     } catch (error) {
-        console.error('Error al procesar las actualizaciones de operaciones:', error);
-        res.status(500).json({ error: 'Error al actualizar las operaciones' });
+        res.status(500).json({ error: error.message || 'Error al actualizar las operaciones' });
     }
 }
+
+
+
+
+
 
 
 function queryAsync(sql, params) {
@@ -480,92 +579,197 @@ function queryAsync(sql, params) {
 
 async function saveOperations(req, res) {
     try {
-        const operaciones = req.body;
+        let operaciones = req.body;
+
+        // Validar que se haya recibido un arreglo de operaciones
         if (!Array.isArray(operaciones) || operaciones.length === 0) {
             return res.status(400).json({ error: 'No se enviaron operaciones a actualizar' });
         }
 
-        await db.beginTransaction();
+        // Primero, agrupamos las operaciones adicionales por id interno y nombre
+        let groupedOperations = {};
 
-        // Mapa para agrupar las operaciones por nombre
-        const operacionesAgrupadas = {};
+        // Iterar sobre las operaciones
+        for (let op of operaciones) {
+            const { id_proyecto, id_operacion, entradaValue, confi, active, id, nombre } = op;
 
-        // Primero, filtramos las operaciones que tienen entradaValue no vacío y las agrupamos por nombre
-        operaciones.forEach((operation) => {
-            const { id_proyecto, id_operacion, name, entradaValue, confi, active } = operation;
-
+            // Validar que exista id_proyecto
             if (!id_proyecto) {
-                console.log('Falta id_proyecto en la operación:', operation);
-                return;
-            }
-            
-            // Si la operación tiene entradaValue vacío, la ignoramos
-            if (entradaValue && entradaValue.length === 0) {
-                return;
+                console.log('Falta id_proyecto en la operación:', op);
+                continue; // Salta esta operación
             }
 
-            // Si no está en el mapa, lo inicializamos
-            if (!operacionesAgrupadas[name]) {
-                operacionesAgrupadas[name] = [];
+            // Ignorar operaciones que no tienen entradaValue o es vacío
+            if (!entradaValue || entradaValue.length === 0) {
+                continue; // Salta esta operación
             }
-
-            // Agregamos los valores de entradaValue a la lista del nombre
-            operacionesAgrupadas[name].push({ id_proyecto, id_operacion, entradaValue, confi, active });
-        });
-
-        // Ahora, procesamos cada grupo de operaciones por nombre
-        for (let name in operacionesAgrupadas) {
-            // Combinar todas las entradas de las operaciones con el mismo nombre
-            let entradaValueCombinada = [];
-
-            operacionesAgrupadas[name].forEach((operation) => {
-                // Combinar los valores de entradaValue asegurándonos de no tener nulos o duplicados
-                const entradaLimpia = Array.isArray(operation.entradaValue)
-                    ? [...new Set(operation.entradaValue.filter(item => item != null && item !== ''))]
-                    : [];
-
-                // Unimos los valores de entrada
-                entradaValueCombinada = [...entradaValueCombinada, ...entradaLimpia];
-            });
-
-            operacionesAgrupadas[name] = operacionesAgrupadas[name].filter((operation) => {
-                return operation.id_operacion != null; // Solo mantiene las operaciones con un id_operacion válido
-            });
-
-            // Filtramos de nuevo para quitar posibles repeticiones globales
-            entradaValueCombinada = [...new Set(entradaValueCombinada.filter(item => item != null && item !== ''))];
-
-            // Convertimos la entrada combinada a JSON para guardarla
-            let entradaLimpiaFinal = entradaValueCombinada // Usamos `let` aquí para permitir reasignación
-
-            // Procesamos cada operación para este nombre
-            for (let operation of operacionesAgrupadas[name]) {
-                const { id_proyecto, id_operacion, confi, active } = operation;
-                // Filtrar y limpiar la entrada de cada operación (si quieres aplicar la limpieza a nivel individual)
-                console.log(`Actualizando operación ${id_operacion} con entrada:`, entradaLimpiaFinal);
-
-                // Realizamos un UPDATE para cada operación
-                const updateQuery = `
-                    UPDATE proyecto_operacion
-                    SET entrada = ?, confi = ?, activa = ?
-                    WHERE id_proyecto = ? AND id_operacion = ?;
+            // Si la operación tiene un id_operacion (es la principal)
+            if (id_proyecto) {
+                // Consultar los IDs internos de la operación para el id_proyecto y id_operacion
+                const getIdSql = `
+                    SELECT id FROM proyecto_operacion
+                    WHERE id_proyecto = ? AND id_operacion = ?
+                    ORDER BY id DESC;
                 `;
-                const values = [JSON.stringify(entradaLimpiaFinal), confi, active, id_proyecto, id_operacion];
 
-                // Ejecutamos el UPDATE en la base de datos
-                await db.query(updateQuery, values);
+                const ids = await new Promise((resolve, reject) => {
+                    db.query(getIdSql, [id_proyecto, id_operacion], (err, results) => {
+                        if (err) {
+                            console.error("Error al obtener los IDs:", err);
+                            reject(err);
+                        } else {
+                            resolve(results.map(row => row.id));  // Mapeamos todos los IDs internos
+                        }
+                    });
+                });
+
+                if (ids.length === 0) {
+                    return res.status(404).json({ error: `Operación no encontrada con id_operacion=${id_operacion}` });
+                }
+
+                // Actualizamos las operaciones principales
+                for (let i = 0; i < ids.length; i++) {
+                    
+                    const dbId = ids[i];
+                    const entradaLimpiaFinal = Array.isArray(entradaValue)
+                        ? [...new Set(entradaValue.filter(item => item != null && item !== ''))]
+                        : [];
+                        if (dbId !== id) {
+                            console.log(`Saltando actualización para el ID interno ${dbId}, no coincide con el ID recibido`);
+                            continue; // Saltamos esta iteración si los IDs no coinciden
+                        }
+                        console.log()
+                    // Obtener la operación principal (configuración activa)
+                    const configActive = operaciones.filter(op => op.isMainRow);
+
+                    // Si no hay ninguna operación principal, continuar
+                    if (configActive.length === 0) {
+                        console.log('No se encontró una operación principal.');
+                        continue;
+                    }
+
+                    // Asumimos que solo hay una operación principal en configActive
+                    const mainOp = configActive[0];  // Accedemos al primer elemento del array
+
+                    // Ahora podemos acceder a confi y active
+                    const configuracion = mainOp.confi;
+                    const Active = mainOp.active;
+                    
+                    // Realizar el UPDATE solo para el ID específico
+                    const updateQuery = `
+                        UPDATE proyecto_operacion
+                        SET entrada = ?, confi = ?, activa = ?
+                        WHERE id = ? AND id_proyecto = ?;
+                    `;
+                    const values = [JSON.stringify(entradaLimpiaFinal), configuracion, Active, dbId, id_proyecto];
+
+                    // Ejecutar el UPDATE en la base de datos
+                    await new Promise((resolve, reject) => {
+                        db.query(updateQuery, values, (err, results) => {
+                            if (err) {
+                                console.error("Error en la actualización:", err);
+                                reject(err);
+                            } else {
+                                resolve(results);
+                            }
+                        });
+                    });
+                }
+            } else {
+                // Si la operación no tiene id_operacion (es una fila adicional), la agrupamos
+                // Agrupar por id interno y nombre
+                if (!groupedOperations[nombre]) {
+                    groupedOperations[nombre] = [];
+                }
+
+                // Agregar la operación adicional a su grupo correspondiente
+                groupedOperations[nombre].push({ id, entradaValue });
             }
         }
 
-        await db.commit();
+        // Ahora, para cada grupo de operaciones adicionales, debemos agregar sus entradaValue a la operación principal
+        for (let nombre in groupedOperations) {
+            const operacionesAdicionales = groupedOperations[nombre];
+
+            // Buscar la operación principal correspondiente (por nombre)
+            const opPrincipal = operaciones.find(op => op.nombre === nombre && op.id_operacion);
+            console.log(opPrincipal);
+            if (opPrincipal) {
+                // Obtenemos el id_operacion de la operación principal
+                const { id_operacion, id_proyecto, entradaValue, confi, activa } = op;
+
+                // Agrupar todas las entradaValue de la operación principal y las adicionales
+                let allEntradaValues = new Set(entradaValue);
+
+                // Agregar los entradaValue de las operaciones adicionales
+                for (let adicional of operacionesAdicionales) {
+                    adicional.entradaValue.forEach(val => allEntradaValues.add(val));
+                }
+
+                // Convertimos el Set en un array de valores únicos
+                const entradaLimpiaFinal = Array.from(allEntradaValues);
+
+                // Actualizar la operación principal con los nuevos valores de entrada
+                const getIdSql = `
+                    SELECT id FROM proyecto_operacion
+                    WHERE id_proyecto = ? AND id_operacion = ?
+                    ORDER BY id DESC;
+                `;
+
+                const ids = await new Promise((resolve, reject) => {
+                    db.query(getIdSql, [id_proyecto, id_operacion], (err, results) => {
+                        if (err) {
+                            console.error("Error al obtener los IDs:", err);
+                            reject(err);
+                        } else {
+                            resolve(results.map(row => row.id));  // Mapeamos todos los IDs internos
+                        }
+                    });
+                });
+
+                if (ids.length === 0) {
+                    return res.status(404).json({ error: `Operación no encontrada con id_operacion=${id_operacion}` });
+                }
+
+                // Actualizar la operación principal con todos los valores combinados
+                for (let dbId of ids) {
+                    const updateQuery = `
+                        UPDATE proyecto_operacion
+                        SET entrada = ?, confi = ?, activa = ?
+                        WHERE id = ? AND id_proyecto = ?;
+                    `;
+                    const values = [JSON.stringify(entradaLimpiaFinal), opPrincipal.confi, opPrincipal.active, dbId, id_proyecto];
+
+                    // Ejecutar el UPDATE en la base de datos
+                    await new Promise((resolve, reject) => {
+                        db.query(updateQuery, values, (err, results) => {
+                            if (err) {
+                                console.error("Error en la actualización:", err);
+                                reject(err);
+                            } else {
+                                resolve(results);
+                            }
+                        });
+                    });
+                }
+            }
+        }
+
+        // Respuesta de éxito
         res.status(200).json({ message: 'Operaciones actualizadas correctamente' });
 
     } catch (error) {
-        await db.rollback();
         console.error('Error al actualizar las operaciones:', error);
         res.status(500).json({ error: 'Error al actualizar las operaciones' });
     }
 }
+
+
+
+
+
+
+
 
 
 
@@ -792,4 +996,4 @@ async function runScript(req, res) {
 
 
 
-module.exports = { runOperation,crearOperacion,runScript,eliminarTodasLasEntradas,borrarOperacion,actualizarOperacion,getOperations,getOperationById,saveOperationsToProject,removeOperationsFromProject,updateOperationsForProject,getOperationsByProject,getOperationsByProjects, saveOperations };
+module.exports = { runOperation,crearOperacion,runScript,duplicarOperacion,eliminarTodasLasEntradas,borrarOperacion,actualizarOperacion,getOperations,getOperationById,saveOperationsToProject,removeOperationsFromProject,updateOperationsForProject,getOperationsByProject,getOperationsByProjects, saveOperations };

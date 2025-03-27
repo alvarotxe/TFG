@@ -28,6 +28,10 @@ export class OperationsService {
   updateOperation(id: string, formData: FormData): Observable<any> {
     return this.http.put(`${this.baseUrl}/updateOperacion/${id}`, formData);
   }
+
+  duplicateOper(id: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/duplicar/${id}`, {});
+  }
   // Método para obtener las operaciones desde el archivo JSON
   getOperations(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/oper`);  // Incluir 'name' en la URL

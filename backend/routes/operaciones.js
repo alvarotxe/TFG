@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const path = require('path');
-const { runOperation,getOperations,eliminarTodasLasEntradas,runScript,crearOperacion,borrarOperacion,actualizarOperacion,getOperationById,saveOperationsToProject,getOperationsByProject,updateOperationsForProject,removeOperationsFromProject,getOperationsByProjects, saveOperations } = require('../controllers/operaciones');
+const { runOperation,getOperations,duplicarOperacion,eliminarTodasLasEntradas,runScript,crearOperacion,borrarOperacion,actualizarOperacion,getOperationById,saveOperationsToProject,getOperationsByProject,updateOperationsForProject,removeOperationsFromProject,getOperationsByProjects, saveOperations } = require('../controllers/operaciones');
 const fs = require('fs');
 const multer = require('multer');
 const storage = multer.diskStorage({
@@ -45,6 +45,7 @@ router.post('/',upload.array('script_text',10),crearOperacion);
 router.post('/execute-script',upload.array('script_text',10), runScript);
 router.post('/run',runOperation);
 router.post('/guardar',saveOperations);
+router.post('/duplicar/:id',duplicarOperacion);
 router.post('/removeOperationsFromProject', removeOperationsFromProject);
 router.post('/saveOperations',saveOperationsToProject);
 

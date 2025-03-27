@@ -1,5 +1,5 @@
 <div class="dialog-container">
-  <h2>{{ 'selectOperations' | transloco }}</h2>
+  <h2>{{ 'selectOperations' | transloco }} {{ this.selectedOperationsCount }} {{ 'de' | transloco }} {{ this.selectTotalOperaciones }}</h2>
 
   <div class="search-bar-container">
     <mat-form-field class="search-bar" style="flex: 1;">
@@ -30,14 +30,14 @@
         <button mat-icon-button [matMenuTriggerFor]="menu" (click)="toggleDescription(operation)">
           <mat-icon>visibility</mat-icon>
         </button>
-        
+
         <!-- Menú para el Popover -->
         <mat-menu #menu="matMenu">
           <div class="popover-content">
             <p>{{ operation.descripcion }}</p> <!-- Muestra la descripción completa -->
           </div>
         </mat-menu>
-        
+
       </mat-cell>
     </ng-container>
 

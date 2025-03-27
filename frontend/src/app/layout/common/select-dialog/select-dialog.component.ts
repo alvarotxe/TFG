@@ -51,6 +51,8 @@ export class SelectDialogComponent {
   pageSize = 4;
   projectId: number;
   archivo:any;
+  selectedOperationsCount: number = 0;
+  selectTotalOperaciones: number = 0;
 
   constructor(
     public dialogRef: MatDialogRef<SelectDialogComponent>,private router: Router,private route: ActivatedRoute,private projectService:ProyectoService,private operationsService: OperationsService,private fb: FormBuilder,private cdr: ChangeDetectorRef,
@@ -82,6 +84,7 @@ export class SelectDialogComponent {
 
     // Obtener las operaciones disponibles
     this.operationsService.getOperations().subscribe((operationsData) => {
+      this.selectTotalOperaciones = operationsData.length;
       if (operationsData) {
         this.operationsList = operationsData.map((op: any) => ({
           ...op,
@@ -105,11 +108,13 @@ export class SelectDialogComponent {
   // Función para marcar todas las operaciones
   selectAll(): void {
     this.operationsList.forEach(operation => operation.selectedControl.setValue(true));
+    this.updateSelectedOperationsCount();
   }
 
   // Función para desmarcar todas las operaciones
   deselectAll(): void {
     this.operationsList.forEach(operation => operation.selectedControl.setValue(false));
+    this.updateSelectedOperationsCount();
   }
   // Marcar las operaciones previamente seleccionadas
   markSelectedOperations(): void {
@@ -117,6 +122,13 @@ export class SelectDialogComponent {
       const isSelected = this.selectedOperations.some(selectedOp => selectedOp.id === operation.id);
       operation.selectedControl.setValue(isSelected, { emitEvent: false });
     });
+    this.updateSelectedOperationsCount();
+  }
+
+  updateSelectedOperationsCount(): void {
+    this.selectedOperationsCount = this.operationsList.filter(
+      (op) => op.selectedControl.value === true
+    ).length;
   }
 
   // Finalizar selección

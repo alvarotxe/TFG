@@ -159,5 +159,9 @@ mat-icon-button {
   color: #007bff !important; /* Color del icono cuando el botón esté activado */
 }
 
+.play-button {
+  border-radius: 50%; /* Hace que el botón sea circular */
+  border: 2px solid #909aa5; /* Puedes cambiar el color del borde según tus necesidades */
+}
 
 

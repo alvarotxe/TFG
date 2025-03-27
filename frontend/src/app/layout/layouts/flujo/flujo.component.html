@@ -9,14 +9,14 @@
     <div class="p-4 flex items-center justify-between border-b border-gray-300">
       <h2 class="text-lg font-bold">{{ 'dataPreprocessing' | transloco }}</h2>
       <div class="flex items-center">
-        <button mat-stroked-button color="primary" (click)="openOperationsSelector()">
+        <button [disabled]="isMoveOrderMode" mat-stroked-button color="primary" (click)="openOperationsSelector()">
           {{ 'selectOperations' | transloco }}
         </button>
         <!-- Botones de ejecutar y guardar -->
-        <button mat-raised-button color="primary" (click)="executeOperationsSequentially()" class="ml-2">
+        <button [disabled]="isMoveOrderMode" mat-raised-button color="primary" (click)="executeOperationsSequentially()" class="ml-2">
           {{ 'execute' | transloco }}
         </button>
-        <button mat-raised-button color="accent" (click)="saveOperations()" class="ml-2">
+        <button [disabled]="isMoveOrderMode" mat-raised-button color="accent" (click)="saveOperations()" class="ml-2">
           {{ 'guardar' | transloco }}
         </button>
         <button mat-icon-button (click)="toggleExpandLeft()">
@@ -52,12 +52,16 @@
             <mat-icon class="custom-icon">swap_vert</mat-icon>
             {{ !isMoveOrderMode ? 'Mover Orden' : 'Desactivar Mover Orden' }}
           </button>
+          <button mat-button (click)="confirmOrder()" class="custom-button" [ngClass]="{ 'moving-mode': isMoveOrderMode }" [disabled]="!isMoveOrderMode">
+            <mat-icon class="custom-icon">check</mat-icon>
+            Confirmar Orden
+          </button>
         </div>           
         <mat-table [dataSource]="addedOperations" class="mat-elevation-z2" [ngClass]="{'moving-mode': isMoveOrderMode}"><!-- cdkDropList (cdkDropListDropped)="drop($event)"-->
           <ng-container matColumnDef="activate" class="small-column">
             <mat-header-cell *matHeaderCellDef class="small-header">{{ 'activate' | transloco }}</mat-header-cell>
             <mat-cell *matCellDef="let operation" class="small-headerr">
-              <mat-slide-toggle
+              <mat-slide-toggle [disabled]="isMoveOrderMode"
                 *ngIf="operation.isActiveColumnVisible"
                 (change)="activateOperation(operation)"
                 [checked]="operation.active === 1">
@@ -85,7 +89,7 @@
                   class="custom-select"
                   [style.width.%]="100">
                   <!-- Aseguramos que las opciones sean todas las posibles -->
-                  <mat-option *ngFor="let file of this.operation.availableFiles" [value]="file">{{ file }}</mat-option>
+                  <mat-option [disabled]="isMoveOrderMode" *ngFor="let file of this.operation.availableFiles" [value]="file">{{ file }}</mat-option>
                 </mat-select>
               </mat-form-field>
               </ng-container>
@@ -98,7 +102,7 @@
                     class="custom-select"
                     [style.width.%]="100">
                     <!-- Aseguramos que las opciones sean todas las posibles -->
-                    <mat-option *ngFor="let file of this.operation.availableFiles" [value]="file">{{ file }}</mat-option>
+                    <mat-option [disabled]="isMoveOrderMode" *ngFor="let file of this.operation.availableFiles" [value]="file">{{ file }}</mat-option>
                   </mat-select>
                 </mat-form-field>
               </ng-template>
@@ -112,7 +116,7 @@
               <div class="flex items-center">
                 <!-- Mostrar solo la primera salida en la fila principal -->
                 <ng-container *ngIf="operation.isMainRow; else additionalRow">
-                  <button *ngIf="operation.salidaValue?.[0]" 
+                  <button [disabled]="isMoveOrderMode" *ngIf="operation.salidaValue?.[0]" 
                           mat-icon-button 
                           (click)="downloadOutputFile(operation.salidaValue[0], proyectoDataID.nombre, proyectoDataID.id)" 
                           aria-label="Descargar archivo">
@@ -139,16 +143,16 @@
           <ng-container matColumnDef="confi">
             <mat-header-cell *matHeaderCellDef class="small-header4">
               {{ 'confi' | transloco }}
-              <button mat-icon-button (click)="clearConfig()" aria-label="Borrar todo" style="padding: 0;">
+              <button [disabled]="isMoveOrderMode" mat-icon-button (click)="clearConfig()" aria-label="Borrar todo" style="padding: 0;">
                 <mat-icon svgIcon="eraser"></mat-icon>
               </button>
             </mat-header-cell>
             <mat-cell *matCellDef="let operation" class="small-header44">
-              <div class="flex items-center">
-                <button *ngIf="operation.isConfigColumnVisible" mat-icon-button (click)="clearConfigForRow(operation)" aria-label="Borrar" style="padding: 0;">
+              <div class="flex items-center" [disabled]="isMoveOrderMode">
+                <button  *ngIf="operation.isConfigColumnVisible" mat-icon-button (click)="clearConfigForRow(operation)" aria-label="Borrar" style="padding: 0;">
                   <mat-icon svgIcon="eraser"></mat-icon>
                 </button>
-                <span *ngIf="operation.isMainRow" class="cursor-pointer ml-2 w-full" (click)="openConfigModal(operation)">
+                <span  *ngIf="operation.isMainRow" class="cursor-pointer ml-2 w-full" (click)="openConfigModal(operation)">
                   {{ operation.confi || 'Click para editar' }}
                 </span>
               </div>
@@ -160,18 +164,26 @@
             <mat-header-cell *matHeaderCellDef class="small-header5">{{ 'step' | transloco }}</mat-header-cell>
             <mat-cell *matCellDef="let operation" class="small-header55">
               <div *ngIf="isMoveOrderMode">
-                <button mat-icon-button (click)="moveOperation(operation, 'up')" [disabled]="isFirst(operation)">
+                <button *ngIf="operation.isActiveColumnVisible" mat-icon-button (click)="moveOperation(operation, 'up')" [disabled]="isFirst(operation)">
                   <mat-icon>arrow_upward</mat-icon> <!-- Icono de flecha arriba -->
                 </button>
-                <button mat-icon-button (click)="moveOperation(operation, 'down')" [disabled]="isLast(operation)">
+                <button *ngIf="operation.isActiveColumnVisible" mat-icon-button (click)="moveOperation(operation, 'down')" [disabled]="isLast(operation)">
                   <mat-icon>arrow_downward</mat-icon> <!-- Icono de flecha abajo -->
                 </button>
-              </div>              
-              <button *ngIf="!isMoveOrderMode" mat-stroked-button color="primary" (click)="onSingleExecute(operation)">
-                {{ 'ejecutar' | transloco }}
-              </button>
+              </div>
+          
+              <!-- Aquí cambiamos el botón "Ejecutar" por un icono de "play" y otro para duplicar -->
+              <div *ngIf="!isMoveOrderMode" class="flex items-center">
+                <button *ngIf="operation.isActiveColumnVisible" [disabled]="isMoveOrderMode" mat-icon-button color="primary" (click)="onSingleExecute(operation)" aria-label="Ejecutar" class="play-button">
+                  <mat-icon>play_arrow</mat-icon> <!-- Icono de play -->
+                </button>                
+          
+                <button *ngIf="operation.isActiveColumnVisible" [disabled]="isMoveOrderMode" mat-icon-button color="accent" (click)="duplicateOperation(operation)" aria-label="Duplicar">
+                  <mat-icon>content_copy</mat-icon> <!-- Icono de duplicar -->
+                </button>
+              </div>
             </mat-cell>
-          </ng-container>
+          </ng-container>          
           
           <mat-header-row *matHeaderRowDef="['activate','name', 'entrada', 'salida', 'confi', 'step']"></mat-header-row>
           <mat-row *matRowDef="let row; columns: ['activate', 'name', 'entrada', 'salida', 'confi', 'step']" [ngClass]="{'hidden-row': row.isHidden}"></mat-row><!--cdkDrag 
