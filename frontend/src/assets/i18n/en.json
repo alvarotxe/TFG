@@ -34,6 +34,7 @@
     "selectOperations": "Select Operations",
     "noOperationsAdded": "No operations added",
     "operationName": "Name",
+    "operationCantidad": "Quantity",
     "activate": "Activate",
     "executing": "Executing",
     "inactive": "Inactive",

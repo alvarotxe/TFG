@@ -121,11 +121,11 @@ export class ProyectoComponent implements AfterViewInit
   onDuplicar(proyecto: any) {
     this.proyectoService.duplicateProyecto(proyecto.id).subscribe(
       (response) => {
-        console.log('Proyecto duplicado:', response);
+        this.snackBar.open('Proyecto duplicado correctamente', 'Cerrar', { duration: 3000 });
         // Aquí podrías agregar la lógica para actualizar la vista o hacer algo más después de duplicar el proyecto
       },
       (error) => {
-        console.error('Error al duplicar el proyecto:', error);
+        this.snackBar.open('No se ha podido duplicar el proyecto', 'Cerrar', { duration: 3000 });
       }
     );
   }  
@@ -159,7 +159,7 @@ export class ProyectoComponent implements AfterViewInit
             });
           },
           (error) => {
-            console.error('Error al eliminar el proyecto', error);
+            this.snackBar.open('No se ha podido eleiminar el proyecto', 'Cerrar', { duration: 3000 });
           }
         );
       }

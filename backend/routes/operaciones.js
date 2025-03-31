@@ -45,7 +45,7 @@ router.post('/',upload.array('script_text',10),crearOperacion);
 router.post('/execute-script',upload.array('script_text',10), runScript);
 router.post('/run',runOperation);
 router.post('/guardar',saveOperations);
-router.post('/duplicar/:id',duplicarOperacion);
+router.post('/duplicar',duplicarOperacion);
 router.post('/removeOperationsFromProject', removeOperationsFromProject);
 router.post('/saveOperations',saveOperationsToProject);
 

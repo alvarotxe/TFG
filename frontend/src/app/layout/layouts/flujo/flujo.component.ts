@@ -128,6 +128,7 @@ export class FlujoComponent{
       allOperations: this.operationsService.getOperationsByProject(this.id)
     }).subscribe(
       ({ projectOperations, allOperations }) => {
+        let operationCounters: { [key: string]: number } = {};
         this.addedOperations = projectOperations.map((projOp: any) => {
           const archivosDelProyecto = this.proyectoDataID.archivo.split(',');
           this.projectFile = archivosDelProyecto;
@@ -141,10 +142,18 @@ export class FlujoComponent{
             });
           }
           
+          // Obtener un identificador único para esta operación específica
           if (matchingOperation && matchingOperation.salidas > 0) {
+            const baseName = matchingOperation.operacion.replace(/\s+/g, '_');
+            if (!operationCounters[baseName]) {
+              operationCounters[baseName] = 1; // Primera aparición
+            } else {
+              operationCounters[baseName]++; // Aumentamos el contador
+            }
+            const operationIndex = operationCounters[baseName];
+  
             salidaValues = new Array(matchingOperation.salidas).fill('').map((_, i) => {
-              const operacionConGuiones = matchingOperation.operacion.replace(/\s+/g, '_');
-              return `${operacionConGuiones}_${'s' + (i + 1)}`;
+              return `${operationIndex}_${baseName}_${'s' + (i + 1)}`;
             });
           }
 
@@ -188,7 +197,6 @@ export class FlujoComponent{
         this.cdr.detectChanges();
       },
       (error) => {
-        console.error('Error al cargar las operaciones:', error);
         this.snackBar.open('No hay operaciones seleccionadas', 'Cerrar', { duration: 3000 });
       }
     );
@@ -222,7 +230,6 @@ expandedOperations($event?: any): Operation[] {
           allEntradaValues: allEntradaValues,
           additionalRows: [],
           tempId: operation.tempId,
-          isModified: this.isModified
       };
 
       expandedList.push(mainRow);
@@ -282,7 +289,7 @@ expandedOperations($event?: any): Operation[] {
       this.availableFilesEntrada = [...this.projectFile];
       this.addedOperations.forEach((prevOp) => {
         // Añadir las salidas de operaciones previas (excluyendo la misma operación)
-        if (prevOp.orden < operation.orden && prevOp.name !== operation.name) {
+        if (prevOp.orden < operation.orden && prevOp.id !== operation.id) {
           this.availableFilesEntrada = [...this.availableFilesEntrada, ...prevOp.salidaValue];
         }
       });
@@ -303,8 +310,9 @@ expandedOperations($event?: any): Operation[] {
       this.snackBar.open('No hay operaciones para guardar', 'Cerrar', { duration: 3000 });
       return; // Salir si no hay operaciones
     }
-    const operationsToSave = this.addedOperations.filter(operation => operation.isModified);
+    const operationsToSave = this.addedOperations.filter(operation => operation.isModified && operation.isMainRow);
     const allOperationsToSave = operationsToSave.map(operation => {
+      
       // Guardar la fila principal
       const mainOperation = {
         id: operation.id,
@@ -319,7 +327,6 @@ expandedOperations($event?: any): Operation[] {
         isMainRow: operation.isMainRow,
         tempId: operation.tempId
       };
-      console.log(mainOperation);
       // Guardar las filas adicionales
       const additionalRows = operation.additionalRows ? operation.additionalRows.map(extraRow => ({
         id: operation.id,
@@ -333,16 +340,18 @@ expandedOperations($event?: any): Operation[] {
       })) : [];
       return [mainOperation, ...additionalRows]; // Retornar tanto la fila principal como las adicionales
     }).flat(); // Aplanar el array de operaciones
-    console.log(allOperationsToSave);
+    
+    if (allOperationsToSave.length === 0) {
+      this.snackBar.open('Para guardar debes seleccionar todas las entradas de dicha operación', 'Cerrar', { duration: 3000 });
+      return; // Salir si no hay operaciones
+    }
     // Guardar todas las operaciones
     this.operationsService.saveOperations(allOperationsToSave).subscribe({
       next: (response) => {
-        console.log('✅ Operaciones guardadas correctamente:', response);
         this.snackBar.open('Operaciones guardadas correctamente', 'Cerrar', { duration: 3000 });
         this.loadAddedOperations(); // Recargar operaciones después de guardar
       },
       error: (error) => {
-        console.error('❌ Error al guardar:', error);
         this.snackBar.open('Error al guardar las operaciones', 'Cerrar', { duration: 3000 });
       }
     });
@@ -361,20 +370,6 @@ openConfigModal(operation: any) {
     }
   });
 }
-
-duplicateOperation(operation: any) {
-  this.operationsService.duplicateOper(operation.id_operacion).subscribe(
-    (response) => {
-      console.log('Proyecto duplicado:', response);
-      // Aquí podrías agregar la lógica para actualizar la vista o hacer algo más después de duplicar el proyecto
-    },
-    (error) => {
-      console.error('Error al duplicar el proyecto:', error);
-    }
-  );
-}
-
-
   // Método para alternar la visibilidad de las filas adicionales
   toggleAdditionalRowsVisibility(show: boolean): void {
     this.addedOperations.forEach(operation => {
@@ -416,17 +411,14 @@ duplicateOperation(operation: any) {
   moveOperation(operation: any, direction: 'up' | 'down'): void {
     const validOperations = this.addedOperations.filter(operation => operation.isMainRow);
     const index = validOperations.indexOf(operation);
-    console.log(index);
     if (index === -1) return;
   
     // Encontramos la operación principal
     const mainOperation = this.findMainOperation(index);
-    console.log(mainOperation);
     if (!mainOperation) return;
   
     // Obtenemos todas sus filas adicionales
     const operationGroup = this.getOperationGroup(mainOperation);
-    console.log(operationGroup);
   
     // Eliminamos el grupo de la lista
     this.removeOperationGroup(mainOperation);
@@ -474,11 +466,11 @@ duplicateOperation(operation: any) {
   
     // Si la operación tiene filas adicionales, actualizarlas también
     this.addedOperations.forEach((op) => {
-      if (op.name === operation.name) {
+      if (op.name === operation.name && op.id === operation.id) {
         op.entradaValue[index] = selectedFile;
       }
     });
-  
+    operation.entradaValue = operation.entradaValue.slice(0, operation.entradas);
     // Filtrar valores vacíos o undefined para evitar elementos vacíos en el array
     operation.entradaValue = operation.entradaValue.filter(value => value && value.trim() !== '');
     operation.isModified = true;
@@ -522,11 +514,9 @@ duplicateOperation(operation: any) {
     // Ahora enviamos las operaciones sanitizadas al backend
     this.operationsService.updateOperationsOrder(this.id, sanitizedOperations).subscribe({
       next: (response) => {
-        console.log('✅ Orden actualizado correctamente:', response);
         this.snackBar.open('Orden de operaciones actualizado', 'Cerrar', { duration: 3000 });
       },
       error: (error) => {
-        console.error('❌ Error al actualizar el orden:', error);
         this.snackBar.open('Error al actualizar el orden', 'Cerrar', { duration: 3000 });
       }
     });
@@ -626,14 +616,13 @@ duplicateOperation(operation: any) {
     } else {
         inputFilePath = null;
     }
-    console.log(inputFilePath);
+    
     const outputFilePath = operation.salidaValue;
     const additionalText = operation.confi;
     const rute_script = operation.script;
     return this.operationsService.runOperation(rute_script, inputFilePath, outputFilePath, additionalText, this.id, this.proyectoDataID.nombre)
       .pipe(
         tap(response => {
-          console.log('Operación completada con éxito:', response);
           this.results.push({
             operationName: operation.name,
             logs: response.logs,
@@ -643,7 +632,6 @@ duplicateOperation(operation: any) {
           this.snackBar.open('Operación completada con éxito', 'Cerrar', { duration: 3000 });
         }),
         catchError(error => {
-          console.error('Error al ejecutar la operación:', error);
           this.results.push({
             operationName: operation.name,
             logs: error.error.logs || 'Hubo un error al ejecutar la operación',
@@ -677,7 +665,6 @@ duplicateOperation(operation: any) {
         this.snackBar.open('Todas las operaciones se han completado', 'Cerrar', { duration: 3000 });
       },
       error: (err) => {
-        console.error('Error al ejecutar operaciones:', err);
         this.snackBar.open('Hubo un error al ejecutar las operaciones', 'Cerrar', { duration: 3000 });
       }
     });
@@ -687,9 +674,10 @@ duplicateOperation(operation: any) {
     this.executeOperation(operation).subscribe({
       next: (response) => {
         console.log('Respuesta de la operación', response);
+        this.snackBar.open(`Se ha completado la operación ${operation.name}`, 'Cerrar', { duration: 3000 });
       },
       error: (err) => {
-        console.log('Error en la ejecución', err);
+        this.snackBar.open(`No se ha podido completar la oepración ${operation.name}`, 'Cerrar', { duration: 3000 });
       }
     });
   }

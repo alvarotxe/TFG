@@ -56,7 +56,6 @@ export class OperacionesComponent implements AfterViewInit
   loadProyectos(): void {
     this.operacionService.getOperations().subscribe((data: any[]) => {
         this.operacionesData = data;
-        console.log( this.operacionesData);
         this.updateTableData();
     });
   }
@@ -151,7 +150,7 @@ export class OperacionesComponent implements AfterViewInit
             this.router.navigate(['/operaciones']);
           },
           (error) => {
-            console.error('Error al eliminar el operacion', error);
+            this.snackBar.open('No se ha podido eliminar la operacion', 'Cerrar', { duration: 3000 });
           }
         );
       }

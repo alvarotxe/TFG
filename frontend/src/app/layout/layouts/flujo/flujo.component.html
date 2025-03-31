@@ -177,10 +177,6 @@
                 <button *ngIf="operation.isActiveColumnVisible" [disabled]="isMoveOrderMode" mat-icon-button color="primary" (click)="onSingleExecute(operation)" aria-label="Ejecutar" class="play-button">
                   <mat-icon>play_arrow</mat-icon> <!-- Icono de play -->
                 </button>                
-          
-                <button *ngIf="operation.isActiveColumnVisible" [disabled]="isMoveOrderMode" mat-icon-button color="accent" (click)="duplicateOperation(operation)" aria-label="Duplicar">
-                  <mat-icon>content_copy</mat-icon> <!-- Icono de duplicar -->
-                </button>
               </div>
             </mat-cell>
           </ng-container>          

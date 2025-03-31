@@ -84,7 +84,7 @@ export class OperacionDatosComponent {
 
   fillFormWithData(data: any): void {
     if (!data) {
-      console.error('Datos vacíos para rellenar el formulario');
+      this.snackBar.open('Datos vacíos para rellenar el formulario', 'Cerrar', { duration: 3000 });
       return;
     }
     this.originalProyectoData = { ...data }; // Guardamos los datos originales
@@ -159,7 +159,6 @@ export class OperacionDatosComponent {
 
     this.operationService.runScript(selectedFile.name, formData).subscribe(
       (response) => {
-          console.log('Respuesta del servidor:', response);
           
           // Convertir la cadena JSON que está en response.output a un objeto
           try {
@@ -173,13 +172,13 @@ export class OperacionDatosComponent {
                 salidas: outputData.configData.output, // Salida
                 confi: outputData.configData.configexample
             });
-            console.log('Formulario actualizado con los datos:', this.proyectoForm.value);
+            this.snackBar.open(`Formulario actualizado con los datos: ${this.proyectoForm.value}`, 'Cerrar', { duration: 3000 });
           } catch (error) {
-              console.error('Error al parsear JSON:', error);
+            this.snackBar.open(`Error al parsear el JSON`, 'Cerrar', { duration: 3000 });
           }
       },
       (error) => {
-          console.error('Error al ejecutar el script:', error);
+        this.snackBar.open(`Error al ejecutar el script ${selectedFile.name}`, 'Cerrar', { duration: 3000 });
       }
   );  
     }
@@ -223,7 +222,7 @@ export class OperacionDatosComponent {
           this.router.navigate(['/operaciones']);
         },
         (error) => {
-          console.error('Error al actualizar el proyecto', error);
+          this.snackBar.open(`Error al actualizar la oepración`, 'Cerrar', { duration: 3000 });
         }
       );
     } else {
@@ -236,7 +235,7 @@ export class OperacionDatosComponent {
           this.router.navigate(['/operaciones']);
         },
         (error) => {
-          console.error('Error al crear el proyecto', error);
+          this.snackBar.open(`Error al crear la operación`, 'Cerrar', { duration: 3000 });
         }
       );
     }

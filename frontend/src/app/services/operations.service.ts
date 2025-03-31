@@ -1,7 +1,8 @@
 // operations.service.ts
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
-import { Observable } from 'rxjs';
+import { catchError } from 'rxjs/operators';
+import { Observable, of } from 'rxjs';
 
 interface Operation {
   name: string;
@@ -29,9 +30,14 @@ export class OperationsService {
     return this.http.put(`${this.baseUrl}/updateOperacion/${id}`, formData);
   }
 
-  duplicateOper(id: string): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/duplicar/${id}`, {});
-  }
+  duplicateOper(operation: any, id_proyecto: any): Observable<any> {
+    // Aseguramos que id_proyecto está dentro del objeto 'operation'
+    const operationWithProject = { ...operation, id_proyecto }; // Añadimos id_proyecto dentro del objeto operation
+  
+    // Ahora enviamos el objeto actualizado al backend
+    return this.http.post<any>(`${this.baseUrl}/duplicar`, operationWithProject);
+  }  
+
   // Método para obtener las operaciones desde el archivo JSON
   getOperations(): Observable<any> {
     return this.http.get<any>(`${this.baseUrl}/oper`);  // Incluir 'name' en la URL
@@ -64,7 +70,17 @@ export class OperationsService {
   }
 
   getOperationsByProject(projectId: number): Observable<any[]> {
-    return this.http.get<any[]>(`${this.baseUrl}/proyecto/${projectId}`);
+    return this.http.get<any[]>(`${this.baseUrl}/proyecto/${projectId}`).pipe(
+      catchError(error => {
+          // Si el error es un 404, puedes devolver un array vacío o realizar alguna otra acción
+          if (error.status === 404) {
+              console.log('No se encontraron operaciones para este proyecto');
+              return of([]); // Esto devolverá un array vacío
+          }
+          // Si es otro tipo de error, lo manejas aquí
+          // También puedes manejar otros errores de la misma manera
+      })
+    );
   }
 
   removeOperationsFromProject(projectId: number, operationsToRemove: number[]): Observable<any> {
@@ -82,7 +98,8 @@ export class OperationsService {
       nombre_operacion: operation.operacion,
       archivo: archivo || null,  // Asumiendo que tienes un campo de archivo si aplica
       orden: index + 1,  // El orden es el índice + 1
-      confi: operation.confi
+      confi: operation.confi,
+      count: operation.count
     }));
 
     return this.http.post<any>(`${this.baseUrl}/saveOperations`, operationsData);

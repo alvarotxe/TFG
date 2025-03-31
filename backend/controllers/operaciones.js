@@ -191,54 +191,44 @@ const borrarOperacion = async (req, res) => {
 };
 
 const duplicarOperacion = async (req, res) => {
-    const { id } = req.params;
-    if (!id) {
-        return res.status(400).send('El ID de la operación es requerido.');
+    const operacion = req.body; // Recibimos toda la operación desde el body
+    console.log(operacion);
+    const {id_proyecto} = operacion;
+    if (!id_proyecto || !operacion.id) {
+      return res.status(400).send('La operación con id_proyecto y id_operacion es requerida.');
     }
-
-    // Primero, obtener los datos de la operación que se va a duplicar
-    const selectSql = 'SELECT * FROM proyecto_operacion WHERE id_operacion = ?';
-    db.query(selectSql, [id], (err, result) => {
+    
+    const idProyecto = operacion.id_proyecto;
+    const idOperacion = operacion.id;
+  
+    // Paso 1: Obtener el máximo valor de "orden" de las operaciones existentes
+    const maxOrdenSql = 'SELECT MAX(orden) AS maxOrden FROM proyecto_operacion WHERE id_proyecto = ?';
+    db.query(maxOrdenSql, [idProyecto], (err, maxResult) => {
+      if (err) {
+        console.error('Error al obtener el orden máximo:', err);
+        return res.status(500).send('Error al obtener el orden máximo');
+      }
+  
+      // Paso 2: Asignar el siguiente orden (evitando añadir un número extra)
+      const siguienteOrden = maxResult[0].maxOrden + 1;
+  
+      // Paso 3: Insertar la nueva operación duplicada con el siguiente orden
+      const insertSql = 'INSERT INTO proyecto_operacion (id_proyecto, id_operacion, entrada, salida, confi, activa, orden) VALUES (?, ?, ?, ?, ?, ?, ?)';
+      const values = [idProyecto, idOperacion, operacion.entrada, operacion.salida, operacion.confi, 0, siguienteOrden];
+  
+      db.query(insertSql, values, (err, result) => {
         if (err) {
-            console.error('Error al obtener la operación:', err);
-            return res.status(500).send('Error al obtener la operación');
+          console.error('Error al duplicar la operación:', err);
+          return res.status(500).send('Error al duplicar la operación');
         }
-
-        if (result.length === 0) {
-            return res.status(404).send('Operación no encontrada');
-        }
-
-        const operacion = result[0];
-        const idProyecto = operacion.id_proyecto;
-
-        // Paso 1: Obtener el máximo valor de "orden" de las operaciones existentes
-        const maxOrdenSql = 'SELECT MAX(orden) AS maxOrden FROM proyecto_operacion WHERE id_proyecto = ?';
-        db.query(maxOrdenSql, [idProyecto], (err, maxResult) => {
-            if (err) {
-                console.error('Error al obtener el orden máximo:', err);
-                return res.status(500).send('Error al obtener el orden máximo');
-            }
-
-            // Paso 2: Asignar el siguiente orden (evitando añadir un número extra)
-            const siguienteOrden = maxResult[0].maxOrden + 1;
-
-            // Paso 3: Insertar la nueva operación duplicada con el siguiente orden
-            const insertSql = 'INSERT INTO proyecto_operacion (id_proyecto, id_operacion, entrada, salida, confi, activa, orden) VALUES (?, ?, ?, ?, ?, ?, ?)';
-            const values = [idProyecto, operacion.id_operacion, operacion.entrada, operacion.salida, operacion.confi, operacion.activa, siguienteOrden];
-
-            db.query(insertSql, values, (err, result) => {
-                if (err) {
-                    console.error('Error al duplicar la operación:', err);
-                    return res.status(500).send('Error al duplicar la operación');
-                }
-
-                res.status(200).send({
-                    message: 'Operación duplicada con éxito',
-                });
-            });
+  
+        res.status(200).send({
+          message: 'Operación duplicada con éxito',
         });
+      });
     });
-};
+  };
+  
 
 
 
@@ -375,57 +365,66 @@ async function saveOperationsToProject(req, res) {
                 return res.status(500).json({ error: 'Error al consultar las operaciones existentes' });
             }
 
-            // Crear un conjunto de id_operacion que ya están asociadas
-            const existingOperationIds = existingOperations.map(op => op.id_operacion);
-
-            // Filtrar las operaciones a insertar, eliminando las que ya existen
-            const operationsToInsert = req.body.filter(operation => !existingOperationIds.includes(operation.id_operacion));
-            if (operationsToInsert.length === 0) {
-                return res.status(400).json({ error: 'Todas las operaciones ya están asociadas al proyecto' });
-            }
-
-            // Obtener el último orden asociado al proyecto (si existe)
-            const lastOrderQuery = `SELECT MAX(orden) as last_order FROM proyecto_operacion WHERE id_proyecto = ${projectId}`;
-
-            db.query(lastOrderQuery, (err, result) => {
+            // Eliminar las operaciones ya asociadas al proyecto
+            const deleteOperationsQuery = `DELETE FROM proyecto_operacion WHERE id_proyecto = ${projectId}`;
+            
+            db.query(deleteOperationsQuery, (err, result) => {
                 if (err) {
-                    console.error('Error al obtener el último orden:', err);
-                    return res.status(500).json({ error: 'Error al consultar el último orden' });
+                    console.error('Error al eliminar las operaciones existentes:', err);
+                    return res.status(500).json({ error: 'Error al eliminar las operaciones existentes' });
                 }
 
-                let lastOrder = result[0].last_order || 0; // Si no hay operaciones, empezar desde 0
+                // Crear un conjunto de id_operacion que ya están asociadas
+                const operationsToInsert = req.body;  // Ya las operaciones que quieres insertar
 
-                // Construir la consulta SQL para insertar las operaciones con el orden secuencial
-                const insertQueries = operationsToInsert.map((operation) => {
-                    lastOrder++;  // Incrementar el orden antes de asignarlo a la siguiente operación
-                    const archivoArray = Array.isArray(operation.archivo) ? operation.archivo : [operation.archivo];
-                    const archivoJSON = JSON.stringify(archivoArray);
-                    return {
-                        id_proyecto: projectId,
-                        id_operacion: operation.id_operacion,
-                        nombre_operacion: operation.nombre_operacion,
-                        archivo: archivoJSON,  // Si no hay archivo, se guarda como NULL
-                        orden: lastOrder,  // Asignar el nuevo orden
-                        confi: operation.confi
-                    };
-                });
+                // Obtener el último orden asociado al proyecto (si existe)
+                const lastOrderQuery = `SELECT MAX(orden) as last_order FROM proyecto_operacion WHERE id_proyecto = ${projectId}`;
 
-                // Construir la consulta de inserción
-                const sql = `INSERT INTO proyecto_operacion (id_proyecto, id_operacion, entrada, salida, confi, activa, orden)
-                            VALUES
-                            ${insertQueries.map(op => `(${op.id_proyecto}, ${op.id_operacion}, '${op.archivo}', 'null', '${op.confi}', 0, ${op.orden})`).join(', ')}`;
-
-                // Ejecutar la consulta SQL para insertar las operaciones
-                db.query(sql, (err, results) => {
+                db.query(lastOrderQuery, (err, result) => {
                     if (err) {
-                        console.error('Error al guardar las operaciones:', err);
-                        return res.status(500).json({ error: 'Error al guardar las operaciones en la base de datos' });
+                        console.error('Error al obtener el último orden:', err);
+                        return res.status(500).json({ error: 'Error al consultar el último orden' });
                     }
 
-                    // Si la inserción es exitosa, responder con éxito
-                    res.json({
-                        message: 'Operaciones guardadas correctamente',
-                        inserted: results.affectedRows,
+                    let lastOrder = result[0].last_order || 0; // Si no hay operaciones, empezar desde 0
+
+                    // Construir la consulta SQL para insertar las operaciones con el orden secuencial y el count
+                    const insertQueries = [];
+                    operationsToInsert.forEach((operation) => {
+                        
+                        // Insertar la operación "count" veces
+                        for (let i = 0; i < operation.count; i++) {
+                            lastOrder++;  // Incrementar el orden antes de asignarlo a la siguiente operación
+                            const archivoArray = Array.isArray(operation.archivo) ? operation.archivo : [operation.archivo];
+                            const archivoJSON = JSON.stringify(archivoArray);
+                            insertQueries.push({
+                                id_proyecto: projectId,
+                                id_operacion: operation.id_operacion,
+                                nombre_operacion: operation.nombre_operacion,
+                                archivo: archivoJSON,  // Si no hay archivo, se guarda como NULL
+                                orden: lastOrder,  // Asignar el nuevo orden
+                                confi: operation.confi
+                            });
+                        }
+                    });
+                    
+                    // Construir la consulta de inserción
+                    const sql = `INSERT INTO proyecto_operacion (id_proyecto, id_operacion, entrada, salida, confi, activa, orden)
+                                VALUES
+                                ${insertQueries.map(op => `(${op.id_proyecto}, ${op.id_operacion}, '${op.archivo}', 'null', '${op.confi}', 0, ${op.orden})`).join(', ')}`;
+
+                    // Ejecutar la consulta SQL para insertar las operaciones
+                    db.query(sql, (err, results) => {
+                        if (err) {
+                            console.error('Error al guardar las operaciones:', err);
+                            return res.status(500).json({ error: 'Error al guardar las operaciones en la base de datos' });
+                        }
+
+                        // Si la inserción es exitosa, responder con éxito
+                        res.json({
+                            message: 'Operaciones guardadas correctamente',
+                            inserted: results.affectedRows,
+                        });
                     });
                 });
             });
@@ -435,6 +434,7 @@ async function saveOperationsToProject(req, res) {
         res.status(500).json({ error: 'Error al procesar las operaciones' });
     }
 }
+
 
 
 
@@ -591,7 +591,7 @@ async function saveOperations(req, res) {
 
         // Iterar sobre las operaciones
         for (let op of operaciones) {
-            const { id_proyecto, id_operacion, entradaValue, confi, active, id, nombre } = op;
+            const { id_proyecto, id_operacion, entradaValue, confi, active, id, nombre, isMainRow } = op;
 
             // Validar que exista id_proyecto
             if (!id_proyecto) {
@@ -628,19 +628,25 @@ async function saveOperations(req, res) {
                 }
 
                 // Actualizamos las operaciones principales
-                for (let i = 0; i < ids.length; i++) {
+                for (let i = 0; i < ids.length && isMainRow; i++) {
                     
                     const dbId = ids[i];
+                    
+                    
+                    if (dbId !== id) {
+                        console.log(`Saltando actualización para el ID interno ${dbId}, no coincide con el ID recibido`);
+                        continue; // Saltamos esta iteración si los IDs no coinciden
+                    }
+                    
+                    
+                    console.log(entradaValue);
                     const entradaLimpiaFinal = Array.isArray(entradaValue)
-                        ? [...new Set(entradaValue.filter(item => item != null && item !== ''))]
-                        : [];
-                        if (dbId !== id) {
-                            console.log(`Saltando actualización para el ID interno ${dbId}, no coincide con el ID recibido`);
-                            continue; // Saltamos esta iteración si los IDs no coinciden
-                        }
-                        console.log()
+                    ? [...new Set(entradaValue.filter(item => item != null && item !== ''))]
+                    : [];
+                   
+                    
                     // Obtener la operación principal (configuración activa)
-                    const configActive = operaciones.filter(op => op.isMainRow);
+                    const configActive = operaciones.filter(op => op.isMainRow && op.id === dbId);
 
                     // Si no hay ninguna operación principal, continuar
                     if (configActive.length === 0) {

@@ -41,9 +41,10 @@
   
   /* Limitar la descripción a un tamaño específico */
   .description-cell {
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
+    flex:none;
+    justify-content: left;
+    align-items: left;
+    width: 35%;
   }
 
   .description-text {

@@ -16,12 +16,12 @@
   <!-- Tabla de operaciones -->
   <mat-table [dataSource]="filteredOperations" class="mat-elevation-z8">
     <ng-container matColumnDef="name">
-      <mat-header-cell *matHeaderCellDef>{{ 'operationName' | transloco }}</mat-header-cell>
-      <mat-cell *matCellDef="let operation">{{ operation.operacion }}</mat-cell>
+      <mat-header-cell *matHeaderCellDef class="small-header-nombre">{{ 'operationName' | transloco }}</mat-header-cell>
+      <mat-cell *matCellDef="let operation" class="small-header-nombre2">{{ operation.operacion }}</mat-cell>
     </ng-container>
 
     <ng-container matColumnDef="description">
-      <mat-header-cell *matHeaderCellDef>{{ 'tabla.descripcion' | transloco }}</mat-header-cell>
+      <mat-header-cell *matHeaderCellDef class="small-header-descripcion">{{ 'tabla.descripcion' | transloco }}</mat-header-cell>
       <mat-cell *matCellDef="let operation" class="description-cell">
         <div class="description-text" [class.expanded]="operation.descriptionVisible">
           {{ operation.descripcion | slice:0:100 }} <!-- Limitar la longitud visible -->
@@ -41,15 +41,34 @@
       </mat-cell>
     </ng-container>
 
-    <ng-container matColumnDef="select">
-      <mat-header-cell *matHeaderCellDef>{{ 'seleccionar' | transloco }}</mat-header-cell>
-      <mat-cell *matCellDef="let operation">
-        <mat-checkbox [formControl]="operation.selectedControl"></mat-checkbox>
+    <ng-container matColumnDef="cantidad">
+      <mat-header-cell *matHeaderCellDef class="small-header-cantidad">{{ 'operationCantidad' | transloco }}</mat-header-cell>
+      <mat-cell *matCellDef="let operation" class="small-header-cantidad2">
+        {{ operation.count || 0 }}x
+      </mat-cell>
+    </ng-container>
+    
+    <ng-container matColumnDef="acciones">
+      <mat-header-cell *matHeaderCellDef class="small-header-acciones">{{ 'tabla.opciones' | transloco }}</mat-header-cell>
+      <mat-cell *matCellDef="let operation" class="small-header-acciones2">
+        <button mat-icon-button color="primary" (click)="aumentarOperation(operation)">
+          <mat-icon>add</mat-icon>
+        </button>
+        <button [disabled]="operation.count == 0" mat-icon-button color="warn" (click)="decrementQuantity(operation)">
+          <mat-icon>delete</mat-icon>
+        </button>
       </mat-cell>
     </ng-container>
 
-    <mat-header-row *matHeaderRowDef="['name', 'description', 'select']"></mat-header-row>
-    <mat-row *matRowDef="let row; columns: ['name', 'description', 'select']"></mat-row>
+    <ng-container matColumnDef="select">
+      <mat-header-cell *matHeaderCellDef class="small-header-select">{{ 'seleccionar' | transloco }}</mat-header-cell>
+      <mat-cell *matCellDef="let operation" class="small-header-select2">
+        <mat-checkbox *ngIf="operation.selectedControl" [formControl]="operation.selectedControl"></mat-checkbox>
+      </mat-cell>
+    </ng-container>
+
+    <mat-header-row *matHeaderRowDef="['name', 'description', 'cantidad', 'acciones', 'select']"></mat-header-row>
+    <mat-row *matRowDef="let row; columns: ['name', 'description', 'cantidad', 'acciones', 'select']"></mat-row>
   </mat-table>
 
   <mat-paginator [pageSize]="pageSize" [pageSizeOptions]="[4, 6, 8]" showFirstLastButtons></mat-paginator>
