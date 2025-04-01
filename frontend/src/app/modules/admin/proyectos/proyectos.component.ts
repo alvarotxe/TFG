@@ -21,6 +21,8 @@ import { ProyectoService } from '../../../services/proyectos.service';
 import { SearchComponent } from 'app/layout/common/search/search.component';
 import { RouterLink } from '@angular/router';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { catchError,map, tap } from 'rxjs/operators';
 
 @Component({
     selector     : 'proyectos',
@@ -33,7 +35,6 @@ import { Router } from '@angular/router';
 export class ProyectoComponent implements AfterViewInit
 {
   proyectosData: any[] = [];
-  filteredProyectosData: any[] = [];
   displayedColumns: string[] = ['id','nombre', 'descripcion','lastModified','opciones'];
   dataSource: any = { data: [] };
   pageIndex: number = 0;
@@ -41,7 +42,13 @@ export class ProyectoComponent implements AfterViewInit
   totalPages: number = 1;
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(SearchComponent) searchComponent: SearchComponent;
-  constructor(private router: Router,private cdr: ChangeDetectorRef, private proyectoService: ProyectoService,private translocoService: TranslocoService,private dialog: MatDialog, private snackBar: MatSnackBar){}
+  constructor(
+    private router: Router,
+    private cdr: ChangeDetectorRef, 
+    private proyectoService: ProyectoService,
+    private translocoService: TranslocoService,
+    private dialog: MatDialog, 
+    private snackBar: MatSnackBar){}
 
   ngAfterViewInit() {
     this.updatePaginator();
@@ -70,7 +77,7 @@ export class ProyectoComponent implements AfterViewInit
   updatePaginator(): void {
     const start = this.pageIndex * this.pageSize;
     const end = start + this.pageSize;
-    this.dataSource.data = this.proyectosData.slice(start, end);  // Actualiza los datos visibles en la tabla
+    this.dataSource.data = this.proyectosData.slice(start, end);
     this.totalPages = Math.ceil(this.proyectosData.length / this.pageSize);
     // Forzamos la detección de cambios
     this.cdr.detectChanges();
@@ -92,24 +99,27 @@ export class ProyectoComponent implements AfterViewInit
   
   onSearch(query: string): void {
     if (query) {
-      this.proyectoService.searchProyectos(query).subscribe(
-        (resultSets: any[]) => {
-          if (resultSets && resultSets.length > 0) {
+      this.proyectoService.searchProyectos(query).pipe(
+        map((resultSets: any[]) => resultSets || []), // Asegura que nunca sea null o undefined
+        tap((resultSets) => {
+          if (resultSets.length > 0) {
             this.proyectosData = resultSets;
             this.updateTableData();
           } else {
             this.snackBar.open('No se encontraron proyectos', 'Cerrar', { duration: 3000 });
           }
-        },
-        (error) => {
-          this.snackBar.open('Error al buscar proyectos', 'Cerrar', { duration: 3000 });
-        }
-      );
+        }),
+        catchError((error) => {
+          console.error('Error al buscar proyectos:', error);
+          this.snackBar.open('No se encontraron proyectos', 'Cerrar', { duration: 3000 });
+          return of([]); // Retorna un array vacío para evitar fallos en la tabla
+        })
+      ).subscribe();
     } else {
       this.loadProyectos();
     }
   }
-  // Método para escuchar el evento de búsqueda en el SearchComponent
+  
   onSearchQuery(query: string): void {
     this.onSearch(query);  // Llamamos al método onSearch con el query recibido
   }
@@ -118,17 +128,18 @@ export class ProyectoComponent implements AfterViewInit
     this.router.navigate(['/datos-proyecto'])
   }
 
-  onDuplicar(proyecto: any) {
-    this.proyectoService.duplicateProyecto(proyecto.id).subscribe(
-      (response) => {
+  onDuplicar(proyecto: any): void {
+    this.proyectoService.duplicateProyecto(proyecto.id).pipe(
+      tap(() => {
         this.snackBar.open('Proyecto duplicado correctamente', 'Cerrar', { duration: 3000 });
-        // Aquí podrías agregar la lógica para actualizar la vista o hacer algo más después de duplicar el proyecto
-      },
-      (error) => {
+      }),
+      catchError((error) => {
         this.snackBar.open('No se ha podido duplicar el proyecto', 'Cerrar', { duration: 3000 });
-      }
-    );
-  }  
+        console.error('Error al duplicar el proyecto:', error);
+        return of(null); // Retorna un observable vacío para que el flujo continúe
+      })
+    ).subscribe();
+  }
 
   onEditar(element: any): void {
     this.router.navigate(['/datos-proyecto'], { queryParams: { id: element.id } });
@@ -137,32 +148,40 @@ export class ProyectoComponent implements AfterViewInit
   onEliminar(element: any): void {
     // Traducir el mensaje que aparece en el diálogo de confirmación
     const message = this.translocoService.translate('confirmacion_eliminacion');
+    const snackBarMessage = this.translocoService.translate('proyecto_borrado_correctamente');
+    const snackBarError = this.translocoService.translate('proyecto_borrado_error');
+    const snackBarClose = this.translocoService.translate('close');
+  
     // Abrir el diálogo de confirmación con el mensaje traducido
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '500px',
       height: '200px',
       data: { message: message }  // Pasar el mensaje traducido
     });
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === 'confirm') {
-        this.proyectoService.deleteProyecto(element.id).subscribe(
-          () => {
-            // Traducir el mensaje para el snackBar
-            const snackBarMessage = this.translocoService.translate('proyecto_borrado_correctamente');
-            const snackBarClose = this.translocoService.translate('close');
-            this.proyectosData = this.proyectosData.filter(proyecto => proyecto.id !== element.id);
-            this.dataSource.data = this.proyectosData;
-            // Mostrar el mensaje en el snackBar con los textos traducidos
-            this.snackBar.open(snackBarMessage, snackBarClose, {
-              duration: 3000,
-              panelClass: ['snack-bar-success'],
-            });
-          },
-          (error) => {
-            this.snackBar.open('No se ha podido eleiminar el proyecto', 'Cerrar', { duration: 3000 });
-          }
-        );
-      }
-    });
+  
+    dialogRef.afterClosed().pipe(
+      tap((result) => {
+        if (result === 'confirm') {
+          this.proyectoService.deleteProyecto(element.id).pipe(
+            tap(() => {
+              this.proyectosData = this.proyectosData.filter(proyecto => proyecto.id !== element.id);
+              this.dataSource.data = this.proyectosData;
+              this.snackBar.open(snackBarMessage, snackBarClose, {
+                duration: 3000,
+                panelClass: ['snack-bar-success'],
+              });
+            }),
+            catchError((error) => {
+              console.error('Error al eliminar el proyecto:', error);
+              this.snackBar.open(snackBarError, snackBarClose, {
+                duration: 3000,
+                panelClass: ['snack-bar-error'],
+              });
+              return of(null); // Retornar un observable vacío para que el flujo continúe
+            })
+          ).subscribe();
+        }
+      })
+    ).subscribe();
   }
 }

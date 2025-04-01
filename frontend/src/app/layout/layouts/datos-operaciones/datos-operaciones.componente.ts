@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, ViewChild, AfterViewInit,ElementRef,ChangeDetectorRef     } from '@angular/core';
+import { Component, ViewEncapsulation, ViewChild, ElementRef} from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { FormsModule } from '@angular/forms';
@@ -21,41 +21,35 @@ import { MatDatepickerModule } from '@angular/material/datepicker';
 import { MatSlideToggleModule } from '@angular/material/slide-toggle';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
-import { DatosComponent } from '../datos/datos.component';
 import { OperacionDatosComponent } from '../operacion-datos/operacion-datos.component';
-import { FlujoComponent } from '../flujo/flujo.component';
-import { CancelDialogComponent } from '../../common/cancel-dialog/cancel-dialog.component';
 import { ActivatedRoute } from '@angular/router';
 import { RouterLink } from '@angular/router';
 import { CdkScrollable } from '@angular/cdk/scrolling';
-import { ProyectoService } from '../../../services/proyectos.service'
-import { FormGroup,FormControl, FormBuilder, Validators } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
 
 @Component({
   selector: 'datos-operaciones',
   standalone: true,
-  imports: [CdkScrollable, MatIconModule,DatosComponent,OperacionDatosComponent,TranslocoModule,FlujoComponent,MatDialogModule,MatDatepickerModule,MatSlideToggleModule,FormsModule,MatSortModule,MatPaginatorModule,MatTableModule,MatSnackBarModule,CommonModule,ReactiveFormsModule, MatInputModule, MatFormFieldModule, RouterLink, MatButtonModule, MatTabsModule],
+  imports: [CdkScrollable, MatIconModule,OperacionDatosComponent,TranslocoModule,MatDialogModule,MatDatepickerModule,MatSlideToggleModule,FormsModule,MatSortModule,MatPaginatorModule,MatTableModule,MatSnackBarModule,CommonModule,ReactiveFormsModule, MatInputModule, MatFormFieldModule, RouterLink, MatButtonModule, MatTabsModule],
   encapsulation: ViewEncapsulation.None,
   templateUrl: './datos-operaciones.componente.html',
 })
 export class DatosOperacionesComponent {
-  activeTab: string = 'datos-operaciones';
   @ViewChild('paginator') paginator: MatPaginator;
   @ViewChild('fileInput') fileInput: ElementRef;
+
   proyectoForm: FormGroup;
   proyectoId: string | null = null;
   proyectoData: any = null;
   proyectoDataID: any = null;
-  isEditMode: boolean = false; 
-  isAddMode: boolean = false;
-  buttonText: string = 'Añadir Operacion';
-  displayedColumns: string[] = ['name','select'];
-  showOperationsSelector = false;
-  selectedOperations: any[] = [];
-  addedOperaaciones = [];
 
-  constructor(private router: Router,private route: ActivatedRoute,private translocoService: TranslocoService,private dialog: MatDialog,private cdr: ChangeDetectorRef, private fb: FormBuilder, private projectService:ProyectoService,private snackBar: MatSnackBar){}
-  fileName: string = '';
+  activeTab: string = 'datos-operaciones';
+
+  constructor(private router: Router,
+    private route: ActivatedRoute,
+    private translocoService: TranslocoService,
+    private fb: FormBuilder){}
+
   ngOnInit(): void {
     // Crear el formulario reactivo
     this.proyectoForm = this.fb.group({
@@ -65,13 +59,11 @@ export class DatosOperacionesComponent {
     });
     this.route.queryParams.subscribe((params) => {
       this.proyectoId = params['id'] || null;
-      console.log(this.proyectoId);
     });
   }
 
   onBack() {
     this.router.navigate(['/operaciones']);
   }
-
 }
 

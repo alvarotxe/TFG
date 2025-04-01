@@ -1,4 +1,4 @@
-import { Component, ViewEncapsulation, ViewChild, AfterViewInit,ElementRef,ChangeDetectorRef     } from '@angular/core';
+import { Component, ViewChild, ElementRef } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { Router } from '@angular/router';
 import { TranslocoModule, TranslocoService } from '@ngneat/transloco';
@@ -22,10 +22,10 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { CancelDialogComponent } from '../../common/cancel-dialog/cancel-dialog.component';
 import { ActivatedRoute } from '@angular/router';
-import { RouterLink } from '@angular/router';
-import { CdkScrollable } from '@angular/cdk/scrolling';
 import { ProyectoService } from '../../../services/proyectos.service'
-import { FormGroup,FormControl, FormBuilder, Validators } from '@angular/forms';
+import { FormGroup, FormBuilder, Validators } from '@angular/forms';
+import { of } from 'rxjs';
+import { catchError, tap } from 'rxjs/operators';
 
 @Component({
   selector: 'app-datos',
@@ -46,9 +46,16 @@ export class DatosComponent {
   modificar: string = '';
   selectedFiles: File[] = [];
   fileNames: string[] = [];
-  deletedFiles: string[] = [];
-  constructor(private router: Router,private translocoService: TranslocoService,private route: ActivatedRoute,private dialog: MatDialog,private cdr: ChangeDetectorRef, private fb: FormBuilder, private projectService:ProyectoService,private snackBar: MatSnackBar){}
   fileName: string = '';
+  deletedFiles: string[] = [];
+  constructor(private router: Router,
+    private translocoService: TranslocoService,
+    private route: ActivatedRoute,
+    private dialog: MatDialog,
+    private fb: FormBuilder, 
+    private projectService:ProyectoService,
+    private snackBar: MatSnackBar){}
+
   ngOnInit(): void {
     // Crear el formulario reactivo
     this.proyectoForm = this.fb.group({
@@ -66,7 +73,6 @@ export class DatosComponent {
       : this.translocoService.translate('modificar.create');
       });
       if (this.isEditMode) {
-        // Obtener los datos del proyecto usando el ID
         this.projectService.getProyectoById(this.proyectoId).subscribe((data) => {
           this.proyectoDataID = data;
           console.log(this.proyectoDataID);
@@ -94,13 +100,11 @@ export class DatosComponent {
 
   isFormModified(): boolean {
     if (!this.isEditMode) {
-      return true;  // Si estás creando un nuevo proyecto, siempre permite el envío.
+      return true;
     }
-    
     if (!this.originalProyectoData) {
-      return false;  // Retorna false si aún no se han cargado los datos originales
+      return false;
     }
-  
     const currentValues = this.proyectoForm.value;
     
     return (
@@ -110,10 +114,9 @@ export class DatosComponent {
     );
   }
    
-
   openFileInput(event: MouseEvent): void {
-    event.stopPropagation(); // Evita que el evento se propague y afecte otros comportamientos.
-    this.fileInput.nativeElement.click(); // Esto abrirá el selector de archivos sin enviar el formulario.
+    event.stopPropagation();
+    this.fileInput.nativeElement.click();
   }
 
   isFileUploaded(fileName: string): boolean {
@@ -126,7 +129,6 @@ export class DatosComponent {
     if (files.length > 0) {
       const newFiles = Array.from(files);
       const duplicateFiles: string[] = [];
-  
       newFiles.forEach((file) => {
         if (this.fileNames.includes(file.name)) {
           duplicateFiles.push(file.name);
@@ -135,7 +137,6 @@ export class DatosComponent {
           this.fileNames.push(file.name);
         }
       });
-  
       if (duplicateFiles.length > 0) {
         this.snackBar.open(
           `Los siguientes archivos ya están agregados: ${duplicateFiles.join(', ')}`,
@@ -143,10 +144,8 @@ export class DatosComponent {
           { duration: 3000, panelClass: ['snack-bar-error'] }
         );
       }
-  
       // Actualizar el formulario
       this.proyectoForm.get('archivo')?.setValue(null); // Evita el error sin intentar asignar archivos
-
     }
   }  
   
@@ -161,50 +160,49 @@ export class DatosComponent {
     formData.append('nombre', this.proyectoForm.get('nombre')?.value);
     formData.append('descripcion', this.proyectoForm.get('descripcion')?.value);
   
-    // Enviar archivos nuevos (si hay)
+    // Archivos nuevos
     if (this.selectedFiles.length > 0) {
       this.selectedFiles.forEach(file => {
         formData.append('archivo[]', file, file.name);
       });
     } else if (this.fileNames.length > 0) {
-      // Si no se han seleccionado archivos nuevos pero aún hay archivos en el proyecto,
-      // enviamos la lista actual para asegurarnos de que se mantengan.
       formData.append('existingFiles', JSON.stringify(this.fileNames));
     }
   
-    // Enviar archivos eliminados (si hay)
+    // Archivos eliminados
     if (this.deletedFiles.length > 0) {
       formData.append('deletedFiles', JSON.stringify(this.deletedFiles));
     }
   
-    if (this.isEditMode) {
-      this.projectService.updateProyecto(this.proyectoId, formData).subscribe(
-        (response) => {
-          this.snackBar.open('Proyecto actualizado correctamente', 'Cerrar', {
-            duration: 3000,
-            panelClass: ['snack-bar-success'],
-          });
-          this.router.navigate(['/proyectos']);
-        },
-        (error) => {
-          console.error('Error al actualizar el proyecto', error);
-        }
-      );
-    } else {
-      this.projectService.addProyecto(formData).subscribe(
-        (response) => {
-          this.snackBar.open('Proyecto creado correctamente', 'Cerrar', {
-            duration: 3000,
-            panelClass: ['snack-bar-success'],
-          });
-          this.router.navigate(['/proyectos']);
-        },
-        (error) => {
-          console.error('Error al crear el proyecto', error);
-        }
-      );
-    }
-  }  
+    const successMessage = this.isEditMode 
+      ? 'Proyecto actualizado correctamente' 
+      : 'Proyecto creado correctamente';
+    const errorMessage = this.isEditMode 
+      ? 'Error al actualizar el proyecto' 
+      : 'Error al crear el proyecto';
+  
+    const request$ = this.isEditMode 
+      ? this.projectService.updateProyecto(this.proyectoId, formData) 
+      : this.projectService.addProyecto(formData);
+  
+    request$.pipe(
+      tap(() => {
+        this.snackBar.open(successMessage, 'Cerrar', {
+          duration: 3000,
+          panelClass: ['snack-bar-success'],
+        });
+        this.router.navigate(['/proyectos']);
+      }),
+      catchError((error) => {
+        console.error(errorMessage, error);
+        this.snackBar.open(errorMessage, 'Cerrar', {
+          duration: 3000,
+          panelClass: ['snack-bar-error'],
+        });
+        return of(null); // Continuar el flujo incluso si hay error
+      })
+    ).subscribe();
+  }
   
   onCancel(event?: Event): void {
     if (event) event.preventDefault();
@@ -228,7 +226,6 @@ export class DatosComponent {
     if (this.proyectoDataID.archivo.includes(fileName)) {
       this.deletedFiles.push(fileName);
     } else {
-      // Si es un archivo recién agregado, lo eliminamos de `selectedFiles`
       this.selectedFiles = this.selectedFiles.filter(file => file.name !== fileName);
     }
   
@@ -236,7 +233,7 @@ export class DatosComponent {
     this.fileNames.splice(index, 1);
   }  
   
-  // Convertir Array de archivos en FileList (porque FileList no se puede modificar directamente)
+  // Convertir Array de archivos en FileList
   convertToFileList(files: File[]): FileList {
     const dataTransfer = new DataTransfer();
     files.forEach(file => dataTransfer.items.add(file));
@@ -246,23 +243,37 @@ export class DatosComponent {
   // Método para descargar un archivo (si ya está en el servidor)
   downloadFile(filename: string, name: string, id: number): void {
     event.preventDefault();
-      // Comprobar si el archivo está en los seleccionados pero aún no subidos
+  
+    // Verificar si el archivo está en la lista de seleccionados pero aún no subidos
     if (this.selectedFiles.some(file => file.name === filename)) {
       this.snackBar.open(
         `El archivo "${filename}" aún no se ha subido.`,
         'Cerrar',
         { duration: 3000, panelClass: ['snack-bar-error'] }
       );
-      return; // Evita que continúe con la descarga
+      return;
     }
-
-    // Si el archivo ya está en la lista de archivos subidos, permitir la descarga
+    // Verificar si el archivo ya está en la lista de archivos subidos
     if (this.fileNames.includes(filename)) {
-      const fileUrl = `http://localhost:3000/proyectos/download/${filename}/${name}/${id}`;
-      const link = document.createElement('a');
-      link.href = fileUrl;
-      link.download = filename;
-      link.click();
+      this.projectService.downloadFile(filename, name, id).pipe(
+        tap((blob: Blob) => {
+          const link = document.createElement('a');
+          const url = window.URL.createObjectURL(blob);
+          link.href = url;
+          link.download = filename;
+          link.click();
+          window.URL.revokeObjectURL(url);
+        }),
+        catchError((error) => {
+          console.error(`Error al descargar el archivo "${filename}"`, error);
+          this.snackBar.open(
+            `Error al descargar el archivo "${filename}".`,
+            'Cerrar',
+            { duration: 3000, panelClass: ['snack-bar-error'] }
+          );
+          return of(null); // Continuar el flujo incluso en caso de error
+        })
+      ).subscribe();
     } else {
       this.snackBar.open(
         `No existe el archivo "${filename}" en el servidor.`,

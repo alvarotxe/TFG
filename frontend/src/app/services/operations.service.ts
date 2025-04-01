@@ -13,56 +13,30 @@ interface Operation {
   providedIn: 'root'
 })
 export class OperationsService {
-  private apiUrl = 'assets/activities.json';
-  private baseUrl = 'http://localhost:3000/operaciones';  // Ruta al archivo JSON en la carpeta assets
+  private baseUrl = 'http://localhost:3000/operaciones';
 
   constructor(private http: HttpClient) {}
 
-  addOperation(formData: FormData): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}`, formData);
+  //GET
+
+  searchOperacion(query: string): Observable<any[]> {
+    
+    return this.http.get<any[]>(`${this.baseUrl}/buscar?query=${query}`).pipe(
+      catchError((error) => {
+        if (error.status === 404) {
+          return of([]);  // No hacer nada o devolver un valor vacío
+        }
+        return of([]);
+      })
+    );
   }
 
-  deleteOperacion(id: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/deleteOperacion/${id}`);
-  }
-
-  updateOperation(id: string, formData: FormData): Observable<any> {
-    return this.http.put(`${this.baseUrl}/updateOperacion/${id}`, formData);
-  }
-
-  duplicateOper(operation: any, id_proyecto: any): Observable<any> {
-    // Aseguramos que id_proyecto está dentro del objeto 'operation'
-    const operationWithProject = { ...operation, id_proyecto }; // Añadimos id_proyecto dentro del objeto operation
-  
-    // Ahora enviamos el objeto actualizado al backend
-    return this.http.post<any>(`${this.baseUrl}/duplicar`, operationWithProject);
-  }  
-
-  // Método para obtener las operaciones desde el archivo JSON
   getOperations(): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/oper`);  // Incluir 'name' en la URL
+    return this.http.get<any>(`${this.baseUrl}/oper`);
   }  
 
   getOperationById(id: string): Observable<any> {
-    return this.http.get<any>(`${this.baseUrl}/operation/${id}`);  // Incluir 'name' en la URL
-  }
-
-  deletePreviousEntries(proyectoId: string): Observable<any> {
-    return this.http.delete(`${this.baseUrl}/delete/${proyectoId}`);
-  }
-
-  saveOperations(operations: any[]): Observable<any> {
-    return this.http.post<any>(`${this.baseUrl}/guardar`, operations);
-  }
-
-  runScript(script: string, formData: FormData): Observable<any> {
-    const body = {script,formData};
-    return this.http.post<any>(`${this.baseUrl}/execute-script`, formData);
-  }  
-
-  runOperation(rute: string, inputFilePath: string, outputFilePath: string, additionalText: string, id:any, name:string): Observable<any> {
-    const body = { rute, inputFilePath, outputFilePath, additionalText, id, name};
-    return this.http.post<any>(`${this.baseUrl}/run`, body);
+    return this.http.get<any>(`${this.baseUrl}/operation/${id}`);
   }
 
   getOperationsByProjects(id: number): Observable<any[]> {
@@ -72,15 +46,37 @@ export class OperationsService {
   getOperationsByProject(projectId: number): Observable<any[]> {
     return this.http.get<any[]>(`${this.baseUrl}/proyecto/${projectId}`).pipe(
       catchError(error => {
-          // Si el error es un 404, puedes devolver un array vacío o realizar alguna otra acción
           if (error.status === 404) {
               console.log('No se encontraron operaciones para este proyecto');
               return of([]); // Esto devolverá un array vacío
           }
-          // Si es otro tipo de error, lo manejas aquí
-          // También puedes manejar otros errores de la misma manera
       })
     );
+  }
+
+  downloadFile(filename: string, name: string, id: number): Observable<Blob> {
+    const url = `${this.baseUrl}/${filename}/${name}/${id}`;
+    return this.http.get(url, { responseType: 'blob' });
+  }
+
+  //POST
+
+  addOperation(formData: FormData): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}`, formData);
+  }
+
+  runScript(script: string, formData: FormData): Observable<any> {
+    const body = {script,formData};
+    return this.http.post<any>(`${this.baseUrl}/execute-script`, formData);
+  }
+
+  runOperation(rute: string, inputFilePath: string, outputFilePath: string, additionalText: string, id:any, name:string): Observable<any> {
+    const body = { rute, inputFilePath, outputFilePath, additionalText, id, name};
+    return this.http.post<any>(`${this.baseUrl}/run`, body);
+  }
+
+  saveOperations(operations: any[]): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/guardar`, operations);
   }
 
   removeOperationsFromProject(projectId: number, operationsToRemove: number[]): Observable<any> {
@@ -88,16 +84,15 @@ export class OperationsService {
       projectId,
       operationsToRemove
     });
-}
+  }
 
-  // Método para guardar las operaciones seleccionadas en la tabla `proyecto_operacion`
   saveOperationsToProject(projectId: number, operations: any[],archivo:any): Observable<any> {
     const operationsData = operations.map((operation, index) => ({
       id_proyecto: projectId,
-      id_operacion: operation.id,  // Asumiendo que tienes un `id` para cada operación
+      id_operacion: operation.id,
       nombre_operacion: operation.operacion,
-      archivo: archivo || null,  // Asumiendo que tienes un campo de archivo si aplica
-      orden: index + 1,  // El orden es el índice + 1
+      archivo: archivo || null,
+      orden: index + 1,
       confi: operation.confi,
       count: operation.count
     }));
@@ -105,7 +100,19 @@ export class OperationsService {
     return this.http.post<any>(`${this.baseUrl}/saveOperations`, operationsData);
   }
 
+  //PUT
+
+  updateOperation(id: string, formData: FormData): Observable<any> {
+    return this.http.put(`${this.baseUrl}/updateOperacion/${id}`, formData);
+  }
+
   updateOperationsOrder(id:any,operations: any[]): Observable<any> {
     return this.http.put<any>(`${this.baseUrl}/update-order/${id}`, { operations });
+  }
+
+  //DELETE
+
+  deleteOperacion(id: string): Observable<any> {
+    return this.http.delete(`${this.baseUrl}/deleteOperacion/${id}`);
   }
 }

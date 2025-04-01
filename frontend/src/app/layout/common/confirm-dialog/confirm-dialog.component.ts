@@ -24,9 +24,6 @@ import { MatIconModule } from '@angular/material/icon';
     <mat-icon>check_circle</mat-icon> {{ 'confirmar' | transloco }}
   </button>
 </div>
-
-
-
   `,
   imports      : [MatDialogModule,MatButtonModule,MatIconModule,TranslocoModule],
   standalone   : true,

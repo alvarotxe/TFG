@@ -21,6 +21,8 @@ import { OperationsService } from '../../../services/operations.service';
 import { FormControl,FormBuilder, FormGroup } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
 import { ProyectoService } from '../../../services/proyectos.service'
+import { catchError, switchMap, tap } from 'rxjs/operators';
+import { of, Observable} from 'rxjs';
 
 interface Operation {
     name: string;
@@ -60,127 +62,141 @@ export class SelectDialogComponent {
   selectTotalOperaciones: number = 0;
 
   constructor(
-    public dialogRef: MatDialogRef<SelectDialogComponent>,private router: Router,private snackBar: MatSnackBar,private route: ActivatedRoute,private projectService:ProyectoService,private operationsService: OperationsService,private fb: FormBuilder,private cdr: ChangeDetectorRef,
+    public dialogRef: MatDialogRef<SelectDialogComponent>,
+    private router: Router,
+    private snackBar: MatSnackBar,
+    private route: ActivatedRoute,
+    private projectService:ProyectoService,
+    private operationsService: OperationsService,
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef,
     @Inject(MAT_DIALOG_DATA) public data: any
   ) {
     this.filteredOperations = new MatTableDataSource(this.operationsList);
-    
   }
 
   ngOnInit(): void {
-    // Obtener las operaciones ya asociadas a este proyecto
-    this.route.queryParams.subscribe((params) => {
-      this.proyectoId = params['id'] || null;
-  
-      // Obtener los datos del proyecto
-      this.projectService.getProyectoById(this.proyectoId).subscribe((data) => {
-        this.proyectoDataID = data;
-        this.projectId = this.proyectoDataID.id;
-        this.archivo = this.proyectoDataID.archivo;
-  
-        // Primero obtener todas las operaciones disponibles
-        this.getOperationsFromTable(); // Llamada para obtener operaciones disponibles
-  
-        // Luego, obtener las operaciones ya asociadas al proyecto
-        this.operationsService.getOperationsByProject(this.projectId).subscribe((operationsFromProject) => {
-          this.selectedOperations = operationsFromProject;
-  
-          // Si hay operaciones asociadas, las agrupamos y contamos
-          if (this.selectedOperations.length > 0) {
-            const operationCounts = this.selectedOperations.reduce((acc: any, operation: any) => {
-              if (!acc[operation.operacion]) {
-                acc[operation.operacion] = { ...operation, count: 1 };
-              } else {
-                acc[operation.operacion].count += 1;
-              }
-              return acc;
-            }, {});
-  
-            // Para cada operación de la lista, actualizamos el contador
-            this.operationsList.forEach((operation: any) => {
-              if (operationCounts[operation.operacion]) {
-                operation.count = operationCounts[operation.operacion].count;
-                operation.selectedControl.setValue(true);  // Marca la operación como seleccionada si está asociada
-              }
-            });
-          }
-  
-          // Asignar las operaciones agrupadas al dataSource del filtro
-          this.filteredOperations.data = this.operationsList;
-  
-          // Marcar las operaciones seleccionadas
-          this.markSelectedOperations();
-        });
-      });
-    });
-  }
-  
-  
-  // Obtener las operaciones disponibles de la tabla proyecto_operacion
-  getOperationsFromTable(): void {
-    this.operationsService.getOperations().subscribe((operationsData) => {
-      this.selectTotalOperaciones = operationsData.length;
-  
-      // Si no hay operaciones disponibles, asignar la lista vacía
-      if (operationsData.length === 0) {
-        this.operationsList = [];
-        this.filteredOperations.data = this.operationsList;
-        return;
-      }
-  
-      // Agrupar operaciones disponibles por nombre y contar las ocurrencias
-      const operationCounts = operationsData.reduce((acc: any, operation: any) => {
-        if (!acc[operation.operacion]) {
-          acc[operation.operacion] = { ...operation, count: 0 };  // Iniciar en 0 si no hay operaciones asociadas
+    this.route.queryParams.pipe(
+      tap((params) => {
+        this.proyectoId = params['id'] || null;
+      }),
+      switchMap(() => {
+        // Obtener los datos del proyecto
+        return this.projectService.getProyectoById(this.proyectoId).pipe(
+          catchError((error) => {
+            this.snackBar.open('Error al obtener los datos del proyecto', 'Cerrar', { duration: 3000 });
+            return of(null); // Si hay un error, devuelve null
+          })
+        );
+      }),
+      switchMap((data) => {
+        if (data) {
+          this.proyectoDataID = data;
+          this.projectId = this.proyectoDataID.id;
+          this.archivo = this.proyectoDataID.archivo;
+          // Obtener todas las operaciones disponibles
+          return this.getOperationsFromTable(); // Ahora devuelve un observable
         }
-        return acc;
-      }, {});
-  
-      // Crear una lista de operaciones disponibles con controles para selección
-      this.operationsList = operationsData.map((op: any) => ({
-        ...op,
-        selectedControl: new FormControl(false),
-        count: operationCounts[op.operacion]?.count || 0,  // Usar el contador para cada operación
-      }));
-  
-      // Asignar las operaciones al dataSource del filtro
-      this.filteredOperations.data = this.operationsList;
-  
-      // Establecer el paginador después de que los datos se hayan cargado
-      this.filteredOperations.paginator = this.paginator;
-  
-      // Forzar la detección de cambios en la vista
-      this.cdr.detectChanges();
-  
-      // Esperar el siguiente ciclo de detección de cambios
-      Promise.resolve().then(() => this.cdr.detectChanges());
+        return of([]); // Si no hay datos del proyecto, devuelve un array vacío
+      }),
+      switchMap(() => {
+        // Obtener las operaciones ya asociadas al proyecto
+        return this.operationsService.getOperationsByProject(this.projectId).pipe(
+          catchError((error) => {
+            this.snackBar.open('Error al obtener las operaciones del proyecto', 'Cerrar', { duration: 3000 });
+            return of([]); // Si hay un error, devuelve un array vacío
+          })
+        );
+      })
+    ).subscribe((operationsFromProject) => {
+      if (operationsFromProject) {
+        this.selectedOperations = operationsFromProject;
+        this.updateOperationsList();
+      }
     });
   }
-  
-  
 
-  // Función para marcar todas las operaciones
+  updateOperationsList() {
+    // Aquí actualizas la lista de operaciones seleccionadas con los datos obtenidos
+    const operationCounts = this.selectedOperations.reduce((acc: any, operation: any) => {
+      if (!acc[operation.operacion]) {
+        acc[operation.operacion] = { ...operation, count: 1 };
+      } else {
+        acc[operation.operacion].count += 1;
+      }
+      return acc;
+    }, {});
+  
+    this.operationsList.forEach((operation: any) => {
+      if (operationCounts[operation.operacion]) {
+        operation.count = operationCounts[operation.operacion].count;
+        operation.selectedControl.setValue(true);
+      }
+    });
+  
+    this.filteredOperations.data = this.operationsList;
+    this.markSelectedOperations();
+  }
+
+  getOperationsFromTable(): Observable<any[]> {
+    return this.operationsService.getOperations().pipe(
+      tap((operationsData) => {
+        this.selectTotalOperaciones = operationsData.length;
+        // Si no hay operaciones disponibles, asignar la lista vacía
+        if (operationsData.length === 0) {
+          this.operationsList = [];
+          this.filteredOperations.data = this.operationsList;
+          return;
+        }
+        // Agrupar operaciones disponibles por nombre y contar las ocurrencias
+        const operationCounts = operationsData.reduce((acc: any, operation: any) => {
+          if (!acc[operation.operacion]) {
+            acc[operation.operacion] = { ...operation, count: 0 };
+          }
+          return acc;
+        }, {});
+  
+        // Crear una lista de operaciones disponibles con controles para selección
+        this.operationsList = operationsData.map((op: any) => ({
+          ...op,
+          selectedControl: new FormControl(false),
+          count: operationCounts[op.operacion]?.count || 0,
+        }));
+  
+        // Asignar las operaciones al dataSource del filtro
+        this.filteredOperations.data = this.operationsList;
+  
+        // Establecer el paginador después de que los datos se hayan cargado
+        this.filteredOperations.paginator = this.paginator;
+  
+        // Forzar la detección de cambios en la vista
+        this.cdr.detectChanges();
+  
+        // Esperar el siguiente ciclo de detección de cambios
+        Promise.resolve().then(() => this.cdr.detectChanges());
+      }),
+      catchError((error) => {
+        this.snackBar.open('Error al obtener las operaciones disponibles', 'Cerrar', { duration: 3000 });
+        return of([]); // Si hay un error, devuelve un array vacío
+      })
+    );
+  }
+  
   selectAll(): void {
     this.operationsList.forEach(operation => {operation.selectedControl.setValue(true);operation.count += 1;});
     this.updateSelectedOperationsCount();
   }
 
-  // Función para desmarcar todas las operaciones
   deselectAll(): void {
     // Iterar sobre la lista de operaciones
     this.operationsList.forEach(operation => {
-      // Desmarcar el control de selección
       operation.selectedControl.setValue(false);
-  
-      // Si count es solo un número, simplemente ponerlo a 0
-      operation.count = 0;  // Asignamos 0 a la propiedad count de la operación
+      operation.count = 0; // Asignamos 0 a la propiedad count de la operación
     });
-  
     // Actualizar el contador de operaciones seleccionadas
     this.updateSelectedOperationsCount();
   }
   
-  // Marcar las operaciones previamente seleccionadas
   markSelectedOperations(): void {
     this.operationsList.forEach(operation => {
       const isSelected = this.selectedOperations.some(selectedOp => selectedOp.id === operation.id);
@@ -197,7 +213,7 @@ export class SelectDialogComponent {
 
   aumentarOperation(operation: any) {
     if (operation.count >= 0) {
-      operation.count += 1; // Incrementar la cantidad en 1 al duplicar
+      operation.count += 1;
       operation.selectedControl.setValue(true);
       this.updateOperationInTable(operation);
     }
@@ -205,7 +221,7 @@ export class SelectDialogComponent {
   
   decrementQuantity(operation: any) {
     if (operation.count > 0) {
-      operation.count -= 1; // Decrementar la cantidad en 1 al eliminar
+      operation.count -= 1;
       if(operation.count == 0){
         operation.selectedControl.setValue(false);
       }
@@ -222,27 +238,22 @@ export class SelectDialogComponent {
       this.cdr.detectChanges(); // Forzamos la detección de cambios para que la tabla se actualice
     }
   }
-   // Finalizar selección
-   finalizeSelection(): void {
+
+  finalizeSelection(): void {
     const selectedOperations = this.operationsList.filter(op => op.selectedControl.value);
     const selectedOperationIds = selectedOperations.map(op => op.id);
-    
-
     // Identificar las operaciones que han sido desmarcadas
     const operationsToRemove = this.selectedOperations.filter(op => !selectedOperationIds.includes(op.id)).map(op => op.id);
-    
     // Guardar las operaciones seleccionadas
     this.operationsService.saveOperationsToProject(this.projectId, selectedOperations, this.archivo).subscribe(
       response => {
         this.snackBar.open('Operaciones guardadas con éxito', 'Cerrar', { duration: 3000 });
         this.selectionChange.emit(selectedOperations);
         this.dialogRef.close(selectedOperations);
-
          // Actualizar filteredOperations después de guardar
-        this.selectedOperations = [...selectedOperations]; // Actualizamos la lista de operaciones seleccionadas
+        this.selectedOperations = [...selectedOperations];
         this.filteredOperations.data = this.selectedOperations; // Asignamos los datos actualizados al dataSource de la tabla
 
-        // Forzar detección de cambios
         this.cdr.detectChanges();
       },
       error => {
@@ -258,11 +269,9 @@ export class SelectDialogComponent {
             this.selectionChange.emit(selectedOperations);
             this.dialogRef.close(selectedOperations);
 
-            // Actualizar filteredOperations después de eliminar
-            this.selectedOperations = this.selectedOperations.filter(op => !operationsToRemove.includes(op.id)); // Actualizamos la lista de operaciones seleccionadas
+            this.selectedOperations = this.selectedOperations.filter(op => !operationsToRemove.includes(op.id));
             this.filteredOperations.data = this.selectedOperations; // Asignamos los datos actualizados al dataSource de la tabla
 
-            // Forzar detección de cambios
             this.cdr.detectChanges();
           },
           error => {
@@ -273,8 +282,7 @@ export class SelectDialogComponent {
       } else {
         this.dialogRef.close(selectedOperations);
       }
-}
-
+  }
 
   // Aplicar filtro de búsqueda
   applySearchFilter(event: Event): void {

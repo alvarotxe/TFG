@@ -1,19 +1,15 @@
 <div class="dialog-container">
   <h2>{{ 'selectOperations' | transloco }} {{ this.selectedOperationsCount }} {{ 'de' | transloco }} {{ this.selectTotalOperaciones }}</h2>
-
   <div class="search-bar-container">
     <mat-form-field class="search-bar" style="flex: 1;">
       <input matInput placeholder="{{ 'buscar_operacion' | transloco }}" (input)="applySearchFilter($event)">
     </mat-form-field>
-
     <!-- Botones de Marcar todas / Desmarcar todas -->
     <div class="buttons-container">
       <button mat-raised-button color="primary" (click)="selectAll()">Marcar todas</button>
       <button mat-raised-button color="warn" (click)="deselectAll()">Desmarcar todas</button>
     </div>
   </div>
-
-  <!-- Tabla de operaciones -->
   <mat-table [dataSource]="filteredOperations" class="mat-elevation-z8">
     <ng-container matColumnDef="name">
       <mat-header-cell *matHeaderCellDef class="small-header-nombre">{{ 'operationName' | transloco }}</mat-header-cell>
@@ -24,20 +20,18 @@
       <mat-header-cell *matHeaderCellDef class="small-header-descripcion">{{ 'tabla.descripcion' | transloco }}</mat-header-cell>
       <mat-cell *matCellDef="let operation" class="description-cell">
         <div class="description-text" [class.expanded]="operation.descriptionVisible">
-          {{ operation.descripcion | slice:0:100 }} <!-- Limitar la longitud visible -->
+          {{ operation.descripcion | slice:0:100 }}
           <span *ngIf="operation.descripcion.length > 100">...</span>
         </div>
         <button mat-icon-button [matMenuTriggerFor]="menu" (click)="toggleDescription(operation)">
           <mat-icon>visibility</mat-icon>
         </button>
-
         <!-- Menú para el Popover -->
         <mat-menu #menu="matMenu">
           <div class="popover-content">
-            <p>{{ operation.descripcion }}</p> <!-- Muestra la descripción completa -->
+            <p>{{ operation.descripcion }}</p>
           </div>
         </mat-menu>
-
       </mat-cell>
     </ng-container>
 
@@ -70,9 +64,8 @@
     <mat-header-row *matHeaderRowDef="['name', 'description', 'cantidad', 'acciones', 'select']"></mat-header-row>
     <mat-row *matRowDef="let row; columns: ['name', 'description', 'cantidad', 'acciones', 'select']"></mat-row>
   </mat-table>
-
   <mat-paginator [pageSize]="pageSize" [pageSizeOptions]="[4, 6, 8]" showFirstLastButtons></mat-paginator>
-
+  
   <div mat-dialog-actions class="action-buttons">
     <button mat-stroked-button color="primary" (click)="dialogRef.close()" class="cancel-btn">
       <mat-icon>cancel</mat-icon> {{ 'cancelar' | transloco }}

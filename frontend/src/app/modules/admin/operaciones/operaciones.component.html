@@ -1,22 +1,15 @@
 <div
     class="absolute inset-0 flex flex-col min-w-0 overflow-y-auto"
     cdkScrollable>
-
     <mat-drawer-container class="flex-auto overflow-visible">
-
-        <!-- Drawer -->
         <mat-drawer
             class="w-72 dark:bg-gray-900"
             [autoFocus]="false"
             [mode]="'over'"
             #matDrawer>
-            
-            
         </mat-drawer>
-
-        <!-- Drawer content -->
+        <!-- Contenido -->
         <mat-drawer-content class="flex flex-col">
-
             <!-- Header -->
             <div class="flex flex-col sm:flex-row flex-0 sm:items-center sm:justify-between p-6 pb-14 sm:pt-4 sm:pb-20 sm:px-10 bg-default dark:bg-transparent">
                 <div class="flex-1 min-w-0">
@@ -24,13 +17,11 @@
                     <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight leading-7 sm:leading-10 truncate">
                         {{ 'titulo_operaciones' | transloco }}
                     </h2>
-                    
                 </div>
                 <!-- Contenedor para búsqueda y botón -->
                 <div class="flex items-center space-x-3">
                     <!-- Búsqueda -->
-                    <search [appearance]="'basic'" (searchQuery)="onSearchQuery($event)"></search>
-                      
+                    <search [appearance]="'basic'" (searchQuery)="onSearchQuery($event)"></search>             
                     <!-- Botón Añadir -->
                     <button mat-flat-button class="sm:inline-flex mdc-button mdc-button--unelevated mat-mdc-unelevated-button mat-primary mat-mdc-button-base" mat-ripple-loader-class-name="mat-mdc-button-ripple" (click)="onAnyadirProyecto()">
                         <span class="mat-mdc-button-persistent-ripple mdc-button__ripple"></span>
@@ -45,12 +36,9 @@
                     </button>
                 </div>
             </div>
-            
-            
             <!-- Main -->
             <div class="flex-auto -mt-16 p-6 sm:p-10 rounded-t-2xl shadow bg-card">
-
-                <!-- CONTENT GOES HERE -->
+                <!-- Contenido tabla -->
                 <div class="proyectos-table-container">
                     <div class="proyectos-table-header">
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 20%' }">{{ 'tabla.nombre' | transloco }}</div>
@@ -58,8 +46,7 @@
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 10%' }">{{ 'tabla.entrsal' | transloco }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 15%' }">{{ 'tabla.script' | transloco }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 10%' }">{{ 'tabla.opciones' | transloco }}</div>
-                    </div>
-                  
+                    </div>               
                     <div *ngFor="let operacion of dataSource.data" class="proyectos-table-row" (click)="onEditar(operacion)" style="cursor: pointer;">
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 20%' }">{{ operacion.operacion }}</div>
                       <div class="proyectos-table-column" [ngStyle]="{ 'flex': '0 0 45%' }">{{ operacion.descripcion }}</div>
@@ -73,9 +60,7 @@
                           <mat-icon>delete</mat-icon>
                         </button>
                       </div>
-                    </div>
-                    
-                    
+                    </div>                  
                 </div>
                 <!-- Paginador -->
                 <div class="proyectos-paginator">
@@ -87,12 +72,8 @@
                         {{ 'next' | transloco }}
                     </button>
                   </div>
-
             </div>
-
         </mat-drawer-content>
-
     </mat-drawer-container>
-
 </div>
 

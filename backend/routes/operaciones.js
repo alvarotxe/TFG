@@ -1,6 +1,6 @@
 const { Router } = require('express');
 const path = require('path');
-const { runOperation,getOperations,duplicarOperacion,eliminarTodasLasEntradas,runScript,crearOperacion,borrarOperacion,actualizarOperacion,getOperationById,saveOperationsToProject,getOperationsByProject,updateOperationsForProject,removeOperationsFromProject,getOperationsByProjects, saveOperations } = require('../controllers/operaciones');
+const { runOperation,getOperations,buscarOperaciones,runScript,crearOperacion,borrarOperacion,actualizarOperacion,getOperationById,saveOperationsToProject,getOperationsByProject,updateOperationsForProject,removeOperationsFromProject,getOperationsByProjects, saveOperations } = require('../controllers/operaciones');
 const fs = require('fs');
 const multer = require('multer');
 const storage = multer.diskStorage({
@@ -14,10 +14,11 @@ const storage = multer.diskStorage({
   const upload = multer({ storage: storage });
 const router = Router();
 
+router.get('/buscar', buscarOperaciones);
 router.get('/oper', getOperations);
 router.get('/operation/:id', getOperationById);
-router.get('/proyecto/:projectId', getOperationsByProject);
 router.get('/getP/:id', getOperationsByProjects);
+router.get('/proyecto/:projectId', getOperationsByProject);
 router.get('/scripts/:filename/:name/:id', (req, res) => {
   const { filename, name, id } = req.params;
   // Construir la ruta completa al archivo
@@ -45,15 +46,13 @@ router.post('/',upload.array('script_text',10),crearOperacion);
 router.post('/execute-script',upload.array('script_text',10), runScript);
 router.post('/run',runOperation);
 router.post('/guardar',saveOperations);
-router.post('/duplicar',duplicarOperacion);
 router.post('/removeOperationsFromProject', removeOperationsFromProject);
 router.post('/saveOperations',saveOperationsToProject);
 
 router.put('/updateOperacion/:id',upload.array('script_text'),actualizarOperacion);
 router.put('/update-order/:id',updateOperationsForProject);
 
-router.delete('/delete/:id', eliminarTodasLasEntradas);
-router.delete('/deleteOperacion/:id', borrarOperacion);
+router.delete('/deleteOperacion/:id', borrarOperacion);//en uso
 
 
 module.exports = router;

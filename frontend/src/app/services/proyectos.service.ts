@@ -6,49 +6,56 @@ import { Observable,map,of,catchError} from 'rxjs';
   providedIn: 'root'
 })
 export class ProyectoService {
-  private apiUrl = 'http://localhost:3000/proyectos'; 
+  private baseUrl = 'http://localhost:3000/proyectos'; 
 
   constructor(private http: HttpClient) {}
 
+  //GET
 
-  //No esta implementado aún
   searchProyectos(query: string): Observable<any[]> {
     
-    return this.http.get<any[]>(`${this.apiUrl}/buscar?query=${query}`).pipe(
+    return this.http.get<any[]>(`${this.baseUrl}/buscar?query=${query}`).pipe(
       catchError((error) => {
-        // Si no hay proyectos, puedes devolver un array vacío
         if (error.status === 404) {
           return of([]);  // No hacer nada o devolver un valor vacío
         }
-        // Devolver el error para manejarlo en otro lugar si es necesario
         return of([]);
       })
     );
   }
-  
-  
-
-  addProyecto(formData: FormData): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}`, formData);
-  }
-
-  duplicateProyecto(id: string): Observable<any> {
-    return this.http.post<any>(`${this.apiUrl}/duplicar/${id}`, {});
-  }
 
   getProyectos(): Observable<any[]> {
-    return this.http.get<any[]>(`${this.apiUrl}/proyecto`);
+    return this.http.get<any[]>(`${this.baseUrl}/proyecto`);
   }
 
   getProyectoById(id: string): Observable<any> {
-    return this.http.get<any>(`${this.apiUrl}/p/${id}`);
+    return this.http.get<any>(`${this.baseUrl}/p/${id}`);
   }
+
+  downloadFile(filename: string, name: string, id: number): Observable<Blob> {
+    const fileUrl = `${this.baseUrl}/download/${filename}/${name}/${id}`;
+    return this.http.get(fileUrl, { responseType: 'blob' });
+  }
+
+  //POST
+
+  addProyecto(formData: FormData): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}`, formData);
+  }
+
+  duplicateProyecto(id: string): Observable<any> {
+    return this.http.post<any>(`${this.baseUrl}/duplicar/${id}`, {});
+  }
+
+  //PUT
 
   updateProyecto(id: string, formData: FormData): Observable<any> {
-    return this.http.put(`${this.apiUrl}/updateProyecto/${id}`, formData);
+    return this.http.put(`${this.baseUrl}/updateProyecto/${id}`, formData);
   }
 
+  //DELETE
+
   deleteProyecto(id: string): Observable<any> {
-    return this.http.delete(`${this.apiUrl}/deleteProyecto/${id}`);
+    return this.http.delete(`${this.baseUrl}/deleteProyecto/${id}`);
   }
 }

@@ -21,6 +21,6 @@ import { MatIconModule } from '@angular/material/icon';
     }
   
     onCancel(): void {
-      this.dialogRef.close(true); // Cierra el diálogo y envía `false` como respuesta
+      this.dialogRef.close(true);
     }
   }

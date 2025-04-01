@@ -15,7 +15,7 @@ const storage = multer.diskStorage({
 
 const router = Router();
 
-
+router.get('/buscar', buscarProyectos);
 router.get('/proyecto', getProyectos);
 router.get('/p/:id', getProyectoById);
 router.get('/download/:filename/:name/:id', (req, res) => {
@@ -44,7 +44,6 @@ router.get('/download/:filename/:name/:id', (req, res) => {
 });
 
 router.post('/', upload.array('archivo[]',5), crearProyectos);
-router.get('/buscar', buscarProyectos);
 router.post('/duplicar/:id', duplicarProyecto);
 
 router.put('/updateProyecto/:id',upload.array('archivo[]'), actualizarProyecto);

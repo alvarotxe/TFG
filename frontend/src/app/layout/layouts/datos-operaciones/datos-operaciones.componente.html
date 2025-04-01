@@ -1,24 +1,22 @@
 <div class="absolute inset-0 flex flex-col min-w-0 overflow-y-auto" cdkScrollable>
     <!-- Header -->
-    <div
-      class="flex flex-col sm:flex-row flex-0 sm:items-center sm:justify-between p-4 sm:py-4 sm:px-6 border-b bg-card dark:bg-transparent"
-    >
-      <div class="flex-1 min-w-0">
-        <div class="flex items-center flex-1 min-w-0">
-          <mat-icon
-            svgIcon="heroicons_outline:arrow-left"
-            class="mr-4 text-indigo-500 cursor-pointer"
-            (click)="onBack()"
-          ></mat-icon>
-          <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight leading-7 sm:leading-10 truncate">
-            {{ 'titulo_operaciones' | transloco }}
-          </h2>
-        </div>
+  <div class="flex flex-col sm:flex-row flex-0 sm:items-center sm:justify-between p-4 sm:py-4 sm:px-6 border-b bg-card dark:bg-transparent">
+    <div class="flex-1 min-w-0">
+      <div class="flex items-center flex-1 min-w-0">
+        <mat-icon
+          svgIcon="heroicons_outline:arrow-left"
+          class="mr-4 text-indigo-500 cursor-pointer"
+          (click)="onBack()"
+        ></mat-icon>
+        <h2 class="text-3xl md:text-4xl font-extrabold tracking-tight leading-7 sm:leading-10 truncate">
+          {{ 'titulo_operaciones' | transloco }}
+        </h2>
       </div>
     </div>
-    <!-- Main -->
-    <div class="flex-auto pt-6 sm:px-4 sm:pb-4">
-      <app-operacion-datos></app-operacion-datos>
-    </div>
   </div>
+  <!-- Main -->
+  <div class="flex-auto pt-6 sm:px-4 sm:pb-4">
+    <app-operacion-datos></app-operacion-datos>
+  </div>
+</div>
   

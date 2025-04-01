@@ -1,11 +1,7 @@
 <div class="flex justify-center">
-    <form
-      [formGroup]="proyectoForm"
-      (ngSubmit)="onSubmit($event)"
-      class="w-full max-w-4xl p-6"
-    >
+    <form [formGroup]="proyectoForm" (ngSubmit)="onSubmit($event)" class="w-full max-w-4xl p-6">
       <div class="flex flex-col space-y-6">
-        <!-- Fila 1: Nombre del Proyecto y Archivo -->
+        <!-- Nombre del Proyecto y Archivo -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
           <!-- Nombre del Proyecto -->
           <div class="flex flex-col">
@@ -21,7 +17,6 @@
               </mat-error>
             </mat-form-field>
           </div>
-  
           <!-- Archivo -->
           <div class="flex flex-col">
             <mat-label>{{ 'archivoOperacion' | transloco }}</mat-label>
@@ -40,7 +35,6 @@
               <ul>
                 <li *ngFor="let file of fileNames; let i = index" class="flex items-center justify-between">
                   <span>{{ file }}</span>
-            
                   <div class="flex space-x-2">
                     <!-- Botón para descargar -->
                     <button 
@@ -60,8 +54,7 @@
             </div>          
           </div>        
         </div>
-  
-        <!-- Fila 2: Descripción del Proyecto -->
+        <!-- Descripción del Proyecto -->
         <div class="flex flex-col">
           <mat-form-field class="w-full">
             <mat-label>{{ 'descripcionOperacion' | transloco }}</mat-label>
@@ -76,8 +69,7 @@
             </mat-error>
           </mat-form-field>
         </div>
-
-        <!-- Fila 3: Entradas y Salidas -->
+        <!-- Entradas y Salidas -->
         <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <!-- Entradas -->
             <div class="flex flex-col">
@@ -96,7 +88,6 @@
                 </mat-error>
               </mat-form-field>
             </div>
-
             <!-- Salidas -->
             <div class="flex flex-col">
               <mat-form-field class="w-full">
@@ -121,7 +112,6 @@
           <button mat-stroked-button color="primary" type="button" (click)="onCancel($event)">
             {{ 'cancelar' | transloco }}
           </button>
-        
           <!-- Botón Enviar -->
           <button mat-raised-button color="primary" type="submit" [disabled]="!isFormModified()">
             {{modificar}}
@@ -129,5 +119,5 @@
         </div>
       </div>
     </form>
-  </div>
+</div>
   

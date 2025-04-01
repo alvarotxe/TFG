@@ -1,8 +1,6 @@
 <div class="absolute inset-0 flex flex-col min-w-0 overflow-y-auto" cdkScrollable>
   <!-- Header -->
-  <div
-    class="flex flex-col sm:flex-row flex-0 sm:items-center sm:justify-between p-4 sm:py-4 sm:px-6 border-b bg-card dark:bg-transparent"
-  >
+  <div class="flex flex-col sm:flex-row flex-0 sm:items-center sm:justify-between p-4 sm:py-4 sm:px-6 border-b bg-card dark:bg-transparent">
     <div class="flex-1 min-w-0">
       <div class="flex items-center flex-1 min-w-0">
         <mat-icon
@@ -19,12 +17,13 @@
   <!-- Main -->
   <div class="flex-auto pt-6 sm:px-4 sm:pb-4">
     <mat-tab-group [animationDuration]="'0'" (selectedTabChange)="onTabChange($event)">
+      <!-- Panel de Datos de Proyecto -->
       <mat-tab label="{{ 'titulo_datos' | transloco }}">
           <div *ngIf="activeTab === 'datos-proyecto'">
             <app-datos></app-datos>
         </div>
       </mat-tab>
-      <!-- Panel de Operaciones -->
+      <!-- Panel de Flujo de Operaciones -->
       <mat-tab *ngIf="isEditMode" label="{{ 'titulo_flujo' | transloco }}">
         <div *ngIf="activeTab === 'flujo-operaciones'">
           <app-flujo></app-flujo>

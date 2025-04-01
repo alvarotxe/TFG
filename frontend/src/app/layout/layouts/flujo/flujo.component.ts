@@ -1,8 +1,7 @@
-import { Component,HostBinding , ViewChild, ElementRef, ChangeDetectorRef,NgZone  } from '@angular/core';
+import { Component,HostBinding , ViewChild, ChangeDetectorRef,NgZone  } from '@angular/core';
 import { TranslocoModule, TranslocoService } from '@ngneat/transloco';
 import { TranslocoHttpLoader } from '../../../core/transloco/transloco.http-loader';
 import { DragDropModule } from '@angular/cdk/drag-drop';
-import { CdkDragDrop,moveItemInArray  } from '@angular/cdk/drag-drop';
 import { MatSnackBarModule } from '@angular/material/snack-bar';
 import { MatSnackBar } from '@angular/material/snack-bar';
 import { MatButtonModule } from '@angular/material/button';
@@ -75,14 +74,15 @@ export class FlujoComponent{
   @ViewChild(MatTable, { static: false }) table!: MatTable<any>;
   @ViewChild('paginator') paginator: MatPaginator;
   private availableFilesCache: Map<string, string[]> = new Map();
-  isDragging = false;
+
   proyectoId: string | null = null;
   proyectoData: any = null;
   proyectoDataID: any = null;
+
   isExpanded: boolean = false;
   isExpandedRight: boolean = false;
   operationsList: Operation[] = [];
-  entradaFiles: string[] = [];
+
   projectFile: string[] = [];
   availableFilesEntrada: string[] = [];
   filteredOperations = new MatTableDataSource<any>(this.operationsList);
@@ -100,11 +100,23 @@ export class FlujoComponent{
   tempId: number;
   isModified: false;
   infoOperaciones:any;
-  constructor(private matIconRegistry: MatIconRegistry, private http: HttpClient, private domSanitizer: DomSanitizer,private cdr: ChangeDetectorRef,private dialog: MatDialog,private route: ActivatedRoute,private ngZone: NgZone,private snackBar: MatSnackBar,private projectService:ProyectoService,private operationsService: OperationsService) {
-    this.matIconRegistry.addSvgIcon(
-      'eraser',
-      this.domSanitizer.bypassSecurityTrustResourceUrl('assets/icons/eraser.svg')
-    );
+  
+  constructor(
+    private matIconRegistry: MatIconRegistry, 
+    private http: HttpClient, 
+    private domSanitizer: DomSanitizer,
+    private cdr: ChangeDetectorRef,
+    private dialog: MatDialog,
+    private route: ActivatedRoute,
+    private ngZone: NgZone,
+    private snackBar: MatSnackBar,
+    private projectService:ProyectoService,
+    private operationsService: OperationsService) 
+  {
+      this.matIconRegistry.addSvgIcon(
+        'eraser',
+        this.domSanitizer.bypassSecurityTrustResourceUrl('assets/icons/eraser.svg')
+      );
   }
 
   ngOnInit(): void {
@@ -114,18 +126,30 @@ export class FlujoComponent{
         this.projectService.getProyectoById(this.proyectoId).subscribe((data) => {
           this.proyectoDataID = data;
           this.archivo = [this.proyectoDataID.archivo];
-          console.log(this.archivo);
           this.id = this.proyectoId;
           this.loadAddedOperations();
         });
       }
     });
   }
+
   // Método para cargar las operaciones asociadas a un proyecto
   loadAddedOperations(): void {
     forkJoin({
-      projectOperations: this.operationsService.getOperationsByProjects(this.id),
-      allOperations: this.operationsService.getOperationsByProject(this.id)
+      projectOperations: this.operationsService.getOperationsByProjects(this.id).pipe(
+        catchError((error) => {
+          console.error('Error al obtener operaciones del proyecto:', error);
+          this.snackBar.open('Error al cargar operaciones del proyecto', 'Cerrar', { duration: 3000 });
+          return of([]); // Devuelve una lista vacía en caso de error
+        })
+      ),
+      allOperations: this.operationsService.getOperationsByProject(this.id).pipe(
+        catchError((error) => {
+          console.error('Error al obtener todas las operaciones:', error);
+          this.snackBar.open('Error al cargar la lista de operaciones', 'Cerrar', { duration: 3000 });
+          return of([]); // Devuelve una lista vacía en caso de error
+        })
+      )
     }).subscribe(
       ({ projectOperations, allOperations }) => {
         let operationCounters: { [key: string]: number } = {};
@@ -135,13 +159,13 @@ export class FlujoComponent{
           const matchingOperation = allOperations.find((op: any) => op.id === projOp.id_operacion);
           let salidaValues = [];
           let ent2 = [];
-          if(matchingOperation && matchingOperation.salidas > 0){
+  
+          if (matchingOperation && matchingOperation.salidas > 0) {
             ent2 = new Array(matchingOperation.entradas).fill('').map((_, i) => {
-              const operacionConGuiones = matchingOperation.operacion;
-              return `${operacionConGuiones}_${'s' + (i + 1)}`;
+              return `${matchingOperation.operacion}_${'s' + (i + 1)}`;
             });
           }
-          
+  
           // Obtener un identificador único para esta operación específica
           if (matchingOperation && matchingOperation.salidas > 0) {
             const baseName = matchingOperation.operacion.replace(/\s+/g, '_');
@@ -156,17 +180,17 @@ export class FlujoComponent{
               return `${operationIndex}_${baseName}_${'s' + (i + 1)}`;
             });
           }
-
+  
           // Obtener valores de entrada desde la base de datos
           let entradaValuesFromDB = projOp.entrada ? JSON.parse(projOp.entrada) : [];
-
+  
           return {
             id: projOp.id,
             id_operacion: projOp.id_operacion,
             name: matchingOperation ? matchingOperation.operacion : 'Desconocido',
-            entrada: new Array(matchingOperation.entradas).fill(''),
-            entradaValue: entradaValuesFromDB != null ? entradaValuesFromDB : new Array(matchingOperation.entradas).fill(''),
-            salida: new Array(matchingOperation.salidas).fill(''),
+            entrada: new Array(matchingOperation?.entradas || 0).fill(''),
+            entradaValue: entradaValuesFromDB || new Array(matchingOperation?.entradas || 0).fill(''),
+            salida: new Array(matchingOperation?.salidas || 0).fill(''),
             salidaValue: salidaValues,
             ent: ent2,
             active: projOp.activa,
@@ -181,104 +205,91 @@ export class FlujoComponent{
             archivo: this.archivo,
             tempId: uuidv4(),
             isModified: this.isModified,
-            // Usar configuración guardada en la base de datos si existe
             confi: projOp.confi || ''
           };
         });
-        console.log(this.addedOperations);
+  
         this.filteredOperations.data = [...this.addedOperations];
         const expandedOperations = this.expandedOperations();
         this.filteredOperations.data = expandedOperations;
-
+  
         if (this.paginator) {
           this.filteredOperations.paginator = this.paginator;
         }
-
+  
         this.cdr.detectChanges();
       },
       (error) => {
+        console.error('Error durante la carga de operaciones:', error);
         this.snackBar.open('No hay operaciones seleccionadas', 'Cerrar', { duration: 3000 });
       }
     );
-}
+  }
+  
 
+  expandedOperations($event?: any): Operation[] {
+    let expandedList: Operation[] = [];
 
-expandedOperations($event?: any): Operation[] {
-  let expandedList: Operation[] = [];
+    this.addedOperations.forEach((operation) => {
+        this.availableFilesEntrada = this.getAvailableFilesForOperation(operation);
+        let allEntradaValues: any[] = operation.entradaValue ? [...operation.entradaValue] : [];
 
-  this.addedOperations.forEach((operation) => {
-      this.availableFilesEntrada = this.getAvailableFilesForOperation(operation);
-      let allEntradaValues: any[] = operation.entradaValue ? [...operation.entradaValue] : [];
+        const mainRow = {
+            ...operation,
+            isMainRow: true,
+            entrada: operation.entrada.length > 0 ? operation.entrada : null,
+            salida: operation.salida.length > 0 ? operation.salida : null,
+            salidaValue: operation.salidaValue,
+            entradaValue: operation.entradaValue.length > 0 ? [operation.entradaValue[0]] : [],
+            ent: operation.ent,
+            isExpanded: operation.isExpanded || false,
+            availableFiles: this.availableFilesEntrada,
+            allEntradaValues: allEntradaValues,
+            additionalRows: [],
+            tempId: operation.tempId,
+        };
 
-      // Buscar si ya existe la operación en la lista previa
-      //const prevOperation = this.addedOperations.find(op => op.id_operacion === operation.id_operacion);
+        expandedList.push(mainRow);
 
-      // Asegurar que los valores de entrada no superen el tamaño permitido
-      //let entradaValue = prevOperation ? [...prevOperation.entradaValue] : (operation.entradaValue ? [...operation.entradaValue] : []);
-      //entradaValue = entradaValue.slice(0, operation.entrada.length); // Recortar si es necesario
+        // Filas adicionales
+        for (let i = 1; i < operation.entrada.length || i < operation.salida.length; i++) {
 
-      const mainRow = {
-          ...operation,
-          isMainRow: true,
-          entrada: operation.entrada.length > 0 ? operation.entrada : null,
-          salida: operation.salida.length > 0 ? operation.salida : null,
-          salidaValue: operation.salidaValue,
-          entradaValue: operation.entradaValue.length > 0 ? [operation.entradaValue[0]] : [],
-          ent: operation.ent,
-          isExpanded: operation.isExpanded || false,
-          availableFiles: this.availableFilesEntrada,
-          allEntradaValues: allEntradaValues,
-          additionalRows: [],
-          tempId: operation.tempId,
-      };
+            const extraRow = {
+                id: operation.id,
+                id_operacion: operation.id_operacion,
+                name: operation.name,
+                entrada: operation.entrada.length > 1 ? [operation.entrada[i]] : null,
+                salida: operation.salida.length > 1 ? [operation.salida[i]] : null,
+                salidaValue: operation.salidaValue && operation.salidaValue[i] ? [operation.salidaValue[i]] : [],
+                entradaValue: operation.entradaValue && operation.entradaValue[i] ? [operation.entradaValue[i]] : [],
+                ent:operation.ent && operation.ent[i] ? [operation.ent[i]] : [],
+                confi: operation.confi,
+                step: false,
+                isMainRow: false,
+                active: operation.active,
+                entradas: operation.entrada,
+                isActiveColumnVisible: false,
+                isStepColumnVisible: false,
+                isConfigColumnVisible: false,
+                salidas: operation.salida,
+                selectedControl: new FormControl(false),
+                availableFiles: this.availableFilesEntrada,
+                archivo: this.proyectoDataID.archivo || null,
+                parentOperation: mainRow,
+                tempId: operation.tempId,
+                isModified: this.isModified
+                
+            };
+            mainRow.additionalRows.push(extraRow);
+            expandedList.push(extraRow);
+        }
+    });
 
-      expandedList.push(mainRow);
-
-      // Filas adicionales
-      for (let i = 1; i < operation.entrada.length || i < operation.salida.length; i++) {
-          //const prevRowValue = prevOperation?.entradaValue[i] || null;
-          //const newValue = entradaValue[i] || null;
-
-          const extraRow = {
-              id: operation.id,
-              id_operacion: operation.id_operacion,
-              name: operation.name,
-              entrada: operation.entrada.length > 1 ? [operation.entrada[i]] : null,
-              salida: operation.salida.length > 1 ? [operation.salida[i]] : null,
-              salidaValue: operation.salidaValue && operation.salidaValue[i] ? [operation.salidaValue[i]] : [],
-              entradaValue: operation.entradaValue && operation.entradaValue[i] ? [operation.entradaValue[i]] : [],
-              ent:operation.ent && operation.ent[i] ? [operation.ent[i]] : [],
-              confi: operation.confi,
-              step: false,
-              isMainRow: false,
-              active: operation.active,
-              entradas: operation.entrada,
-              isActiveColumnVisible: false,
-              isStepColumnVisible: false,
-              isConfigColumnVisible: false,
-              salidas: operation.salida,
-              selectedControl: new FormControl(false),
-              availableFiles: this.availableFilesEntrada,
-              archivo: this.proyectoDataID.archivo || null,
-              parentOperation: mainRow,
-              tempId: operation.tempId,
-              isModified: this.isModified
-              
-          };
-          mainRow.additionalRows.push(extraRow);
-          expandedList.push(extraRow);
-      }
-  });
-
-  console.log('Expanded List:', expandedList);
-  this.addedOperations = expandedList;
-  return expandedList;
-}
-
-
+    this.addedOperations = expandedList;
+    return expandedList;
+  }
 
   getAvailableFilesForOperation(operation: any): string[] {
-    // Chequear si ya tenemos las opciones calculadas para esta operación
     if (this.availableFilesCache.has(operation.orden)) {
       return this.availableFilesCache.get(operation.orden)!;
     }
@@ -308,7 +319,7 @@ expandedOperations($event?: any): Operation[] {
   saveOperations(): void {
     if (this.addedOperations.length === 0) {
       this.snackBar.open('No hay operaciones para guardar', 'Cerrar', { duration: 3000 });
-      return; // Salir si no hay operaciones
+      return;
     }
     const operationsToSave = this.addedOperations.filter(operation => operation.isModified && operation.isMainRow);
     const allOperationsToSave = operationsToSave.map(operation => {
@@ -357,19 +368,20 @@ expandedOperations($event?: any): Operation[] {
     });
   }
 
-openConfigModal(operation: any) {
-  operation.isModified = true;
-  const dialogRef = this.dialog.open(ConfigDialogComponent, {
-    width: '800px',
-    data: { config: operation.confi || '' }
-  });
+  openConfigModal(operation: any) {
+    operation.isModified = true;
+    const dialogRef = this.dialog.open(ConfigDialogComponent, {
+      width: '800px',
+      data: { config: operation.confi || '' }
+    });
 
-  dialogRef.afterClosed().subscribe(result => {
-    if (result !== null) {
-      operation.confi = result; // Guarda el nuevo valor
-    }
-  });
-}
+    dialogRef.afterClosed().subscribe(result => {
+      if (result !== null) {
+        operation.confi = result; // Guarda el nuevo valor
+      }
+    });
+  }
+
   // Método para alternar la visibilidad de las filas adicionales
   toggleAdditionalRowsVisibility(show: boolean): void {
     this.addedOperations.forEach(operation => {
@@ -377,37 +389,37 @@ openConfigModal(operation: any) {
         operation.isHidden = !show;
       }
     });
-    //this.updateDataSource();  // Asegúrate de que los cambios se reflejen en la tabla
   }
 
   onEye(): void {
-    this.mostrarFilasAdicionales = !this.mostrarFilasAdicionales; // Alterna entre true y false
+    this.mostrarFilasAdicionales = !this.mostrarFilasAdicionales; // Alterna entre activar y desactivar el modo detalle
     this.toggleAdditionalRowsVisibility(this.mostrarFilasAdicionales);
   }
   
-  onMoveOrder(operation: any, direction: 'up' | 'down'): void {
-    this.mostrarFilasAdicionales = !this.mostrarFilasAdicionales; // Alterna entre true y false
+  onMoveOrder(): void {
+    this.mostrarFilasAdicionales = !this.mostrarFilasAdicionales; // Alterna entre activar y desactivar el modo detalle
     this.toggleAdditionalRowsVisibility(this.mostrarFilasAdicionales);
     this.isMoveOrderMode = !this.isMoveOrderMode; // Alterna entre activar y desactivar el modo mover
     if (!this.isMoveOrderMode) {
-      this.resetSelection(); // Resetear selección de operaciones cuando se desactiva el modo
+      this.resetSelection();
       window.location.reload();
     }
     this.isOrderChanged = true;
   }
+
   confirmOrder(): void {
     if (this.isOrderChanged) {
       // Llamar a la función que actualiza el orden en el backend
       this.updateOperationOrder();
       // Recargar la vista después de confirmar
       this.refreshTable();
-      
       // Resetear el estado después de confirmar
       this.isOrderChanged = false;
       this.isMoveOrderMode = false;
       window.location.reload();
     }
   }
+
   moveOperation(operation: any, direction: 'up' | 'down'): void {
     const validOperations = this.addedOperations.filter(operation => operation.isMainRow);
     const index = validOperations.indexOf(operation);
@@ -434,8 +446,6 @@ openConfigModal(operation: any) {
     this.reassignOrder();
     this.updateAvailableFiles();
   
-    // Finalmente, actualizamos en la base de datos
-    //this.updateOperationOrder();
   }
 
   // Verificar si la operación es la primera
@@ -450,17 +460,14 @@ openConfigModal(operation: any) {
 
   resetSelection(): void {
     this.selectedOperations = [];
-    // Aquí podrías limpiar cualquier selección visual en la UI, si es necesario
   }
 
   onFileSelected(event: any, operation: any, index: number) {
     const selectedFile = event.value;
-  
     // Asegurar que entradaValue exista
     if (!operation.entradaValue) {
       operation.entradaValue = [];
     }
-  
     // Guardar el valor en la posición correspondiente
     operation.entradaValue[index] = selectedFile;
   
@@ -484,6 +491,7 @@ openConfigModal(operation: any) {
         op.availableFiles = this.getAvailableFilesForOperation(op);
     });
   }
+
   removeCircularReferences(obj: any): any {
     const seen = new Set();
     return JSON.parse(JSON.stringify(obj, (key, value) => {
@@ -496,8 +504,7 @@ openConfigModal(operation: any) {
       return value;
     }));
   }
-  
-  // Función para actualizar el orden en la base de datos
+
   updateOperationOrder(): void {
     const validOperations = this.addedOperations.filter(op => op.isMainRow);
     // Usamos la función removeCircularReferences antes de actualizar el orden
@@ -506,12 +513,11 @@ openConfigModal(operation: any) {
       const cleanedOperation = this.removeCircularReferences(operation); // Limpiamos la operación de referencias circulares
       return {
         ...cleanedOperation,
-        orden: index + 1, // Asumimos que el orden empieza desde 1
+        orden: index + 1,
         positionIndex: index
       };
     });
-  
-    // Ahora enviamos las operaciones sanitizadas al backend
+
     this.operationsService.updateOperationsOrder(this.id, sanitizedOperations).subscribe({
       next: (response) => {
         this.snackBar.open('Orden de operaciones actualizado', 'Cerrar', { duration: 3000 });
@@ -542,9 +548,6 @@ openConfigModal(operation: any) {
       if (operation.isMainRow) {
         operation.orden = order;
         order++;
-        
-        // Reasignar el orden solo de las filas adicionales de la operación específica
-        
       }
     }
   }
@@ -562,26 +565,21 @@ openConfigModal(operation: any) {
   
     // Buscamos todas las filas relacionadas, sin eliminar otras del mismo nombre
     const group = [operation];
-  
     for (let i = index + 1; i < this.addedOperations.length; i++) {
       if (this.addedOperations[i].name === operation.name && !this.addedOperations[i].isMainRow) {
         group.push(this.addedOperations[i]);
       } else {
-        break; // Detenemos si encontramos otra operación diferente
+        break;
       }
     }
-  
     return group;
   }
   
-
-
   removeOperationGroup(operation: Operation): void {
     const validOperations = this.addedOperations.filter(op => op.isMainRow);
     this.addedOperations = validOperations.filter(op => op.tempId !== operation.tempId);
   }  
   
-
   getNewIndex(index: number): number {
     let count = 0;
     for (let i = 0; i < this.addedOperations.length; i++) {
@@ -595,10 +593,6 @@ openConfigModal(operation: any) {
 
   insertOperationGroup(index: number, group: Operation[]): void {
     this.addedOperations.splice(index, 0, ...group);
-  }
-
-  createArray(size: number): any[] {
-    return new Array(size);
   }
     
   onOperationsUpdated(updatedOperations: any[]): void {
@@ -643,12 +637,12 @@ openConfigModal(operation: any) {
         })
       );
   }
+
   // Método para ejecutar las operaciones de manera secuencial
   executeOperationsSequentially(): void {
     // Filtrar solo las operaciones activadas
     const activeOperations = this.addedOperations.filter((operation) => operation.active === 1);
     if (activeOperations.length === 0) {
-      // Si no hay operaciones activadas, mostrar el diálogo de advertencia
       this.snackBar.open('Selecciona alguna operación antes de la ejecución', 'Cerrar', { duration: 3000 });
       return;
     }
@@ -673,7 +667,6 @@ openConfigModal(operation: any) {
   onSingleExecute(operation: any) {
     this.executeOperation(operation).subscribe({
       next: (response) => {
-        console.log('Respuesta de la operación', response);
         this.snackBar.open(`Se ha completado la operación ${operation.name}`, 'Cerrar', { duration: 3000 });
       },
       error: (err) => {
@@ -691,6 +684,7 @@ openConfigModal(operation: any) {
     this.isExpandedRight = !this.isExpandedRight;
     this.isExpanded = false;
   }
+
   // Aplicar filtro de búsqueda
   applySearchFilter(event: Event): void {
     const filterValue = (event.target as HTMLInputElement).value.trim().toLowerCase();
@@ -698,6 +692,7 @@ openConfigModal(operation: any) {
       this.filteredOperations.filter = filterValue;
     });
   }
+
   // Modal para el Selector de Operaciones
   openOperationsSelector(): void {
     this.dialog.open(SelectDialogComponent, {
@@ -732,6 +727,7 @@ openConfigModal(operation: any) {
       operation.selectedControl.setValue(false);
     });
   }
+
   //Activar o Desactivar Operación
   activateOperation(operation: any): void {
     operation.isModified = true;
@@ -740,6 +736,7 @@ openConfigModal(operation: any) {
     // Filtrar las operaciones activas
     this.activeOperations = this.addedOperations.filter((op) => op.active === 1);
   }
+
   // Método para borrar todos los valores de la columna confi
   clearConfig(): void {
     // Itera sobre las operaciones y limpia el campo confi
@@ -747,11 +744,12 @@ openConfigModal(operation: any) {
       operation.confi = '';
     });
   }
+
   // Método para borrar solo el valor de la configuración en una fila específica
   clearConfigForRow(operation: Operation): void {
-    // Limpiar solo el campo 'confi' de esa operación específica
     operation.confi = '';
   }
+
   // Recargar resultados
   reloadResults(): void {
     //console.log('Resultados recargados:', this.addedOperations);

@@ -17,11 +17,12 @@ import { MatSidenavModule } from '@angular/material/sidenav';
 import { MatTableModule } from '@angular/material/table';
 import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
-import { ProyectoService } from '../../../services/proyectos.service';
 import { OperationsService } from '../../../services/operations.service';
 import { SearchComponent } from 'app/layout/common/search/search.component';
 import { RouterLink } from '@angular/router';
 import { Router } from '@angular/router';
+import { of } from 'rxjs';
+import { catchError, map, tap } from 'rxjs/operators';
 
 @Component({
     selector     : 'operaciones',
@@ -33,17 +34,20 @@ import { Router } from '@angular/router';
 })
 export class OperacionesComponent implements AfterViewInit
 {
-  proyectosData: any[] = [];
   operacionesData: any[] = [];
-  filteredProyectosData: any[] = [];
-  displayedColumns: string[] = ['id','nombre', 'descripcion','lastModified','opciones'];
   dataSource: any = { data: [] };
   pageIndex: number = 0;
   pageSize: number = 7;
   totalPages: number = 1;
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(SearchComponent) searchComponent: SearchComponent;
-  constructor(private router: Router,private cdr: ChangeDetectorRef, private proyectoService: ProyectoService, private operacionService: OperationsService,private translocoService: TranslocoService,private dialog: MatDialog, private snackBar: MatSnackBar){}
+  constructor(
+    private router: Router,
+    private cdr: ChangeDetectorRef, 
+    private operacionService: OperationsService,
+    private translocoService: TranslocoService,
+    private dialog: MatDialog, 
+    private snackBar: MatSnackBar){}
 
   ngAfterViewInit() {
     this.updatePaginator();
@@ -94,24 +98,27 @@ export class OperacionesComponent implements AfterViewInit
   
   onSearch(query: string): void {
     if (query) {
-      this.proyectoService.searchProyectos(query).subscribe(
-        (resultSets: any[]) => {
-          if (resultSets && resultSets.length > 0) {
+      this.operacionService.searchOperacion(query).pipe(
+        map((resultSets: any[]) => resultSets || []), // Asegurar que no sea null o undefined
+        tap((resultSets) => {
+          if (resultSets.length > 0) {
             this.operacionesData = resultSets;
             this.updateTableData();
           } else {
             this.snackBar.open('No se encontraron operaciones', 'Cerrar', { duration: 3000 });
           }
-        },
-        (error) => {
-          this.snackBar.open('Error al buscar operaciones', 'Cerrar', { duration: 3000 });
-        }
-      );
+        }),
+        catchError((error) => {
+          console.error('Error al buscar operaciones:', error);
+          this.snackBar.open('No se encontraron operaciones', 'Cerrar', { duration: 3000 });
+          return of([]); // Retornar un array vacío para evitar errores posteriores
+        })
+      ).subscribe();
     } else {
       this.loadProyectos();
     }
   }
-  // Método para escuchar el evento de búsqueda en el SearchComponent
+
   onSearchQuery(query: string): void {
     this.onSearch(query);  // Llamamos al método onSearch con el query recibido
   }
@@ -125,35 +132,42 @@ export class OperacionesComponent implements AfterViewInit
   }
 
   onEliminar(element: any): void {
-    // Traducir el mensaje que aparece en el diálogo de confirmación
     const message = this.translocoService.translate('confirmacion_eliminacion');
+    const snackBarMessage = this.translocoService.translate('operacion_borrada_correctamente');
+    const snackBarError = this.translocoService.translate('operacion_borrada_error');
+    const snackBarClose = this.translocoService.translate('close');
+  
     // Abrir el diálogo de confirmación con el mensaje traducido
     const dialogRef = this.dialog.open(ConfirmDialogComponent, {
       width: '500px',
       height: '200px',
-      data: { message: message }  // Pasar el mensaje traducido
+      data: { message: message }
     });
-    dialogRef.afterClosed().subscribe(result => {
-      if (result === 'confirm') {
-        this.operacionService.deleteOperacion(element.id).subscribe(
-          () => {
-            // Traducir el mensaje para el snackBar
-            const snackBarMessage = this.translocoService.translate('operacion_borrada_correctamente');
-            const snackBarClose = this.translocoService.translate('close');
-            this.operacionesData = this.operacionesData.filter(proyecto => proyecto.id !== element.id);
-            this.dataSource.data = this.operacionesData;
-            // Mostrar el mensaje en el snackBar con los textos traducidos
-            this.snackBar.open(snackBarMessage, snackBarClose, {
-              duration: 3000,
-              panelClass: ['snack-bar-success'],
-            });
-            this.router.navigate(['/operaciones']);
-          },
-          (error) => {
-            this.snackBar.open('No se ha podido eliminar la operacion', 'Cerrar', { duration: 3000 });
-          }
-        );
-      }
-    });
+  
+    dialogRef.afterClosed().pipe(
+      tap((result) => {
+        if (result === 'confirm') {
+          this.operacionService.deleteOperacion(element.id).pipe(
+            tap(() => {
+              this.operacionesData = this.operacionesData.filter(proyecto => proyecto.id !== element.id);
+              this.dataSource.data = this.operacionesData;
+              this.snackBar.open(snackBarMessage, snackBarClose, {
+                duration: 3000,
+                panelClass: ['snack-bar-success'],
+              });
+              this.router.navigate(['/operaciones']);
+            }),
+            catchError((error) => {
+              console.error('Error al eliminar la operación:', error);
+              this.snackBar.open(snackBarError, snackBarClose, {
+                duration: 3000,
+                panelClass: ['snack-bar-error'],
+              });
+              return of(null); // Retornar un observable vacío para evitar que el flujo falle
+            })
+          ).subscribe();
+        }
+      })
+    ).subscribe();
   }
 }
