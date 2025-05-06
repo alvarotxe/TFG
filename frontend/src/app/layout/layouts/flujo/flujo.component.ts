@@ -99,6 +99,7 @@ export class FlujoComponent{
   id:any;
   tempId: number;
   isModified: false;
+  activarTodo: boolean = false;
   infoOperaciones:any;
   
   constructor(
@@ -395,17 +396,40 @@ export class FlujoComponent{
     this.mostrarFilasAdicionales = !this.mostrarFilasAdicionales; // Alterna entre activar y desactivar el modo detalle
     this.toggleAdditionalRowsVisibility(this.mostrarFilasAdicionales);
   }
+
+  onActivar(): void {
+    this.mostrarFilasAdicionales = !this.mostrarFilasAdicionales;
+    this.toggleAdditionalRowsVisibility(this.mostrarFilasAdicionales);
+  
+    this.activarTodo = !this.activarTodo; // <<--- aquí alternamos activación/desactivación
+  
+    const activar = this.addedOperations.some(op => op.isMainRow && op.active === 0);
+  
+    this.addedOperations.forEach(operation => {
+      if (operation.isMainRow) {
+        operation.active = activar ? 1 : 0;
+        operation.isModified = true;
+      }
+    });
+  
+    this.refreshTable();
+  }  
+  
   
   onMoveOrder(): void {
-    this.mostrarFilasAdicionales = !this.mostrarFilasAdicionales; // Alterna entre activar y desactivar el modo detalle
-    this.toggleAdditionalRowsVisibility(this.mostrarFilasAdicionales);
-    this.isMoveOrderMode = !this.isMoveOrderMode; // Alterna entre activar y desactivar el modo mover
-    if (!this.isMoveOrderMode) {
-      this.resetSelection();
-      window.location.reload();
+    // Alterna entre activar y desactivar el modo mover
+    this.isMoveOrderMode = !this.isMoveOrderMode;
+  
+    // Siempre que se active el modo mover, ocultar las filas adicionales
+    if (this.isMoveOrderMode) {
+      this.mostrarFilasAdicionales = false;  // Se desactivan las filas adicionales
+      this.toggleAdditionalRowsVisibility(this.mostrarFilasAdicionales);
     }
+  
+    // Si el modo mover es desactivado, no es necesario hacer nada
     this.isOrderChanged = true;
   }
+  
 
   confirmOrder(): void {
     if (this.isOrderChanged) {
@@ -416,7 +440,8 @@ export class FlujoComponent{
       // Resetear el estado después de confirmar
       this.isOrderChanged = false;
       this.isMoveOrderMode = false;
-      window.location.reload();
+      this.activarTodo = false;
+      
     }
   }
 

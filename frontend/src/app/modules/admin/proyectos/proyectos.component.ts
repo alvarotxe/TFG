@@ -19,10 +19,12 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { ProyectoService } from '../../../services/proyectos.service';
 import { SearchComponent } from 'app/layout/common/search/search.component';
+import { CustomMatPaginatorIntl } from '../../../../assets/i18n/custom-paginator-intl';
+import { MatPaginatorIntl } from '@angular/material/paginator';
 import { RouterLink } from '@angular/router';
 import { Router } from '@angular/router';
-import { of } from 'rxjs';
-import { catchError,map, tap } from 'rxjs/operators';
+import { timer,of } from 'rxjs';
+import { switchMap ,catchError,map, tap } from 'rxjs/operators';
 
 @Component({
     selector     : 'proyectos',
@@ -31,6 +33,9 @@ import { catchError,map, tap } from 'rxjs/operators';
     styleUrls: ['./proyectos.component.scss'],
     encapsulation: ViewEncapsulation.None,
     imports      : [CdkScrollable, MatSidenavModule,TranslocoModule, ReactiveFormsModule,MatFormFieldModule,MatSnackBarModule,CommonModule,MatDialogModule,MatIconModule,MatPaginatorModule, RouterLink,MatTableModule, MatButtonModule,SearchComponent],
+    providers: [
+        { provide: MatPaginatorIntl, useClass: CustomMatPaginatorIntl } 
+    ]
 })
 export class ProyectoComponent implements AfterViewInit
 {
@@ -38,7 +43,7 @@ export class ProyectoComponent implements AfterViewInit
   displayedColumns: string[] = ['id','nombre', 'descripcion','lastModified','opciones'];
   dataSource: any = { data: [] };
   pageIndex: number = 0;
-  pageSize: number = 7;
+  pageSize: number = 10;
   totalPages: number = 1;
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(SearchComponent) searchComponent: SearchComponent;
@@ -70,9 +75,9 @@ export class ProyectoComponent implements AfterViewInit
     const end = start + this.pageSize;
     this.dataSource.data = this.proyectosData.slice(start, end);
     this.totalPages = Math.ceil(this.proyectosData.length / this.pageSize);
-     // Forzamos la detección de cambios
+    // Forzamos la detección de cambios
     this.cdr.detectChanges();
-  }
+  }  
 
   updatePaginator(): void {
     const start = this.pageIndex * this.pageSize;
@@ -90,6 +95,13 @@ export class ProyectoComponent implements AfterViewInit
     }
   }
 
+  onPaginatorChange(event: any): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.updateTableData();
+  }
+  
+
   onPaginatorNext(): void {
     if (this.pageIndex < this.totalPages - 1) {
       this.pageIndex++;
@@ -99,26 +111,27 @@ export class ProyectoComponent implements AfterViewInit
   
   onSearch(query: string): void {
     if (query) {
-      this.proyectoService.searchProyectos(query).pipe(
-        map((resultSets: any[]) => resultSets || []), // Asegura que nunca sea null o undefined
-        tap((resultSets) => {
-          if (resultSets.length > 0) {
-            this.proyectosData = resultSets;
-            this.updateTableData();
-          } else {
-            this.snackBar.open('No se encontraron proyectos', 'Cerrar', { duration: 3000 });
-          }
-        }),
-        catchError((error) => {
-          console.error('Error al buscar proyectos:', error);
-          this.snackBar.open('No se encontraron proyectos', 'Cerrar', { duration: 3000 });
-          return of([]); // Retorna un array vacío para evitar fallos en la tabla
-        })
-      ).subscribe();
+      // Filtrar los proyectos según el nombre o la descripción
+      const filteredProyectos = this.proyectosData.filter((proyecto) =>
+        proyecto.nombre.toLowerCase().includes(query.toLowerCase()) ||
+        proyecto.descripcion.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      if (filteredProyectos.length > 0) {
+        this.proyectosData = filteredProyectos;
+        this.updateTableData();
+      } else {
+        const message = this.translocoService.translate('project_not_found');
+        this.snackBar.open(message, 'Cerrar', { duration: 3000 });
+        this.proyectosData = [];  // Vaciar la tabla si no hay resultados
+        this.updateTableData();  // Actualizar la tabla (vacía)
+      }
     } else {
-      this.loadProyectos();
+      // Si no hay texto de búsqueda, recargamos todos los proyectos
+      this.loadProyectos();  // Recargamos todos los proyectos
     }
-  }
+  }  
+  
   
   onSearchQuery(query: string): void {
     this.onSearch(query);  // Llamamos al método onSearch con el query recibido
@@ -133,10 +146,15 @@ export class ProyectoComponent implements AfterViewInit
       tap(() => {
         this.snackBar.open('Proyecto duplicado correctamente', 'Cerrar', { duration: 3000 });
       }),
+      // Esperar 2 segundos antes de recargar
+      switchMap(() => timer(1000)), // 2000 milisegundos = 2 segundos
+      tap(() => {
+        this.loadProyectos(); // Recarga la lista desde el backend
+      }),
       catchError((error) => {
         this.snackBar.open('No se ha podido duplicar el proyecto', 'Cerrar', { duration: 3000 });
         console.error('Error al duplicar el proyecto:', error);
-        return of(null); // Retorna un observable vacío para que el flujo continúe
+        return of(null);
       })
     ).subscribe();
   }

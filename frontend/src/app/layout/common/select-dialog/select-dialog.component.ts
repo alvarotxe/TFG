@@ -22,6 +22,8 @@ import { FormControl,FormBuilder, FormGroup } from '@angular/forms';
 import { MatMenuModule } from '@angular/material/menu';
 import { ProyectoService } from '../../../services/proyectos.service'
 import { catchError, switchMap, tap } from 'rxjs/operators';
+import { MatPaginatorIntl } from '@angular/material/paginator';
+import { CustomMatPaginatorIntl } from '../../../../assets/i18n/custom-paginator-intl';
 import { of, Observable} from 'rxjs';
 
 interface Operation {
@@ -40,6 +42,9 @@ interface Operation {
   styleUrls: ['./select-dialog.component.css'],
   imports:[MatPaginator,ReactiveFormsModule,MatSnackBarModule,MatIconModule,MatMenuModule,MatButtonModule,MatDialogModule,TranslocoModule,MatCheckboxModule,MatTooltipModule,CommonModule,MatTableModule,MatInputModule,MatFormFieldModule],
   standalone   : true,
+  providers: [
+    { provide: MatPaginatorIntl, useClass: CustomMatPaginatorIntl } 
+  ]
 })
 export class SelectDialogComponent {
   @ViewChild(MatPaginator) paginator: MatPaginator;

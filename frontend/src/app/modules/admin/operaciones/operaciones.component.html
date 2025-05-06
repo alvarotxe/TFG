@@ -20,6 +20,14 @@
                 </div>
                 <!-- Contenedor para búsqueda y botón -->
                 <div class="flex items-center space-x-3">
+                    <!-- Paginador -->
+                    <div class="flex items-center space-x-2 proyectos-paginator-inline">
+                      <mat-paginator class="bg-default dark:bg-transparent" [pageSize]="pageSize"
+                          [pageSizeOptions]="[8, 10, 20]"
+                          [length]="operacionesData.length"
+                          (page)="onPaginatorChange($event)">
+                      </mat-paginator>
+                    </div>
                     <!-- Búsqueda -->
                     <search [appearance]="'basic'" (searchQuery)="onSearchQuery($event)"></search>             
                     <!-- Botón Añadir -->
@@ -37,7 +45,7 @@
                 </div>
             </div>
             <!-- Main -->
-            <div class="flex-auto -mt-16 p-6 sm:p-10 rounded-t-2xl shadow bg-card">
+            <div class="flex-auto -mt-16 p-6 sm:p-10 rounded-t-2xl shadow bg-default dark:bg-transparent">
                 <!-- Contenido tabla -->
                 <div class="proyectos-table-container">
                     <div class="proyectos-table-header">
@@ -62,16 +70,6 @@
                       </div>
                     </div>                  
                 </div>
-                <!-- Paginador -->
-                <div class="proyectos-paginator">
-                    <button mat-raised-button color="primary" (click)="onPaginatorPrev()" [disabled]="pageIndex === 0">
-                        {{ 'before' | transloco }}
-                    </button>
-                    <span>{{ pageIndex + 1 }} / {{ totalPages }}</span>
-                    <button mat-raised-button color="primary" (click)="onPaginatorNext()" [disabled]="pageIndex === totalPages - 1">
-                        {{ 'next' | transloco }}
-                    </button>
-                  </div>
             </div>
         </mat-drawer-content>
     </mat-drawer-container>

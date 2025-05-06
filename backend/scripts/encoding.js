@@ -1,8 +1,8 @@
 const fs = require('fs');
 const csv = require('csv-parser');
+
 const COMMON_EXTENSIONS = ['.csv', '.txt', '.json'];
 
-// [ EJECUTAR MAIN ]
 const args = process.argv.slice(2);
 if (args.length === 1 && (args[0] === '-c' || args[0] === '-C')) {
   console.log(JSON.stringify({
@@ -18,23 +18,6 @@ if (args.length === 1 && (args[0] === '-c' || args[0] === '-C')) {
   }, null, 2));
   process.exit(0);
 }
-if (args.length < 3) {
-  console.error('Uso: node script.js <inputFile> <dictFile> <outputFile> [configFile]');
-  process.exit(1);
-}
-try {
-  const inputFile = findFileWithExtension(args[0]);
-  const dictFile = args[1];
-  const outputFile = args[2];
-  const config = loadConfig(args[3]);
-
-  main(inputFile, dictFile, outputFile, config)
-    .catch(error => console.error('! ERROR !', error));
-} 
-catch (error) {
-  console.error('ERROR:', error.message);
-}
-
 
 // [ BUSCA ARCHIVO CON EXTENSIÓN ]
 function findFileWithExtension(filePath) {
@@ -162,7 +145,20 @@ function stringToNumeric(existingDictionary = {}) {
 
 // [ MAIN ]
 const main = async (inputFile, dictFile, outputFile, config) => {
-  const existingDictionaries = await loadDictionary(dictFile);
+
+  // ABRIRI DICCIONARIO EXISTENTE O CREAR UNO NUEVO
+  let existingDictionaries;
+  try {
+      existingDictionaries = await loadDictionary(dictFile);
+  } catch (error) {
+      if (error.code === 'ENOENT') { // Archivo no encontrado
+          existingDictionaries = {}; // Crear un diccionario vacío
+          await saveDictionary(dictFile, existingDictionaries); // Guardarlo
+      } else {
+          throw error; // Otro tipo de error
+      }
+  }
+  
   const data = await readCSV(inputFile);
   const dictionaries = { ...existingDictionaries };
   const transformedData = data.map(row => {
@@ -183,3 +179,21 @@ const main = async (inputFile, dictFile, outputFile, config) => {
   saveCSV(transformedData, outputFile+'.csv');
   saveDictionary(dictionaries, dictFile+'.csv', config.headers.split(','));
 };
+
+// [ EJECUTAR MAIN ]
+if (args.length < 3) {
+  console.error('Uso: node script.js <inputFile> <dictFile> <outputFile> [configFile]');
+  process.exit(1);
+}
+try {
+  const inputFile = findFileWithExtension(args[0]);
+  const dictFile = args[1];
+  const outputFile = args[2];
+  const config = loadConfig(args[3]);
+
+  main(inputFile, dictFile, outputFile, config)
+    .catch(error => console.error('! ERROR !', error));
+} 
+catch (error) {
+  console.error('ERROR:', error.message);
+}

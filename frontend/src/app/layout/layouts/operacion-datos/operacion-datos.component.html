@@ -27,7 +27,7 @@
               formControlName="script_text"
               style="display: none"
             />
-            <button mat-button type="button" (click)="openFileInput($event)" class="bg-indigo-500 text-white w-full">
+            <button mat-button type="button" (click)="openFileInput($event)" class="sm:inline-flex mdc-button mdc-button--unelevated mat-mdc-unelevated-button mat-primary mat-mdc-button-base">
               {{ 'seleccionarArchivo' | transloco }}
             </button>
             <div *ngIf="fileNames.length > 0" class="mt-2 text-sm text-gray-700">
@@ -39,14 +39,13 @@
                     <!-- Botón para descargar -->
                     <button 
                         mat-icon-button 
-                        color="primary" 
                         (click)="downloadFile(file, proyectoDataID.operacion, proyectoDataID.id)"
                         [disabled]="!isFileUploaded(file)">
-                        <mat-icon>download</mat-icon>
+                        <mat-icon class="mat-default mat-mdc-button-base">download</mat-icon>
                     </button>
                     <!-- Botón para eliminar -->
                     <button mat-icon-button color="warn" (click)="removeFile(i)">
-                      <mat-icon>delete</mat-icon>
+                      <mat-icon >delete</mat-icon>
                     </button>
                   </div>
                 </li>

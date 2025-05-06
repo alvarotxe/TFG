@@ -1,8 +1,8 @@
-<div class="flex justify-center">
+<div class="flex justify-center ">
   <form [formGroup]="proyectoForm" (ngSubmit)="onSubmit($event)" class="w-full max-w-4xl p-6">
-    <div class="flex flex-col space-y-6">
+    <div class="flex flex-col space-y-6 ">
       <!-- Nombre del Proyecto y Archivo -->
-      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 ">
         <!-- Nombre del Proyecto -->
         <div class="flex flex-col">
           <mat-form-field class="w-full">
@@ -28,7 +28,7 @@
             style="display: none"
             multiple
           />
-          <button mat-button type="button" (click)="openFileInput($event)" class="bg-indigo-500 text-white w-full">
+          <button mat-button type="button" (click)="openFileInput($event)" class="sm:inline-flex mdc-button mdc-button--unelevated mat-mdc-unelevated-button mat-primary mat-mdc-button-base">
             {{ 'seleccionarArchivo' | transloco }}
           </button>
           <div *ngIf="fileNames.length > 0" class="mt-2 text-sm text-gray-700">
@@ -38,8 +38,8 @@
                 <span>{{ file }}</span>
                 <div class="flex space-x-2">
                   <!-- Botón para descargar -->
-                  <button mat-icon-button color="primary" (click)="downloadFile(file, proyectoDataID.nombre, proyectoDataID.id)">
-                    <mat-icon>download</mat-icon>
+                  <button mat-icon-button (click)="downloadFile(file, proyectoDataID.nombre, proyectoDataID.id)">
+                    <mat-icon class="mat-deafult mat-mdc-button-base">download</mat-icon>
                   </button>
                   <!-- Botón para eliminar -->
                   <button mat-icon-button color="warn" (click)="removeFile(i)">

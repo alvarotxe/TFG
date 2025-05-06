@@ -2,6 +2,8 @@ import { Overlay } from '@angular/cdk/overlay';
 import { Injectable } from '@angular/core';
 import { Observable } from 'rxjs';
 import { NgClass, NgFor, NgIf, NgTemplateOutlet } from '@angular/common';
+import { TranslocoModule, TranslocoService } from '@ngneat/transloco';
+import { TranslocoHttpLoader } from '../../../core/transloco/transloco.http-loader';
 import { HttpClient } from '@angular/common/http';
 import { Component, ElementRef, EventEmitter, HostBinding, inject, Input, OnChanges, OnDestroy, OnInit, Output, Renderer2, SimpleChanges, ViewChild, ViewEncapsulation } from '@angular/core';
 import { FormsModule, ReactiveFormsModule, UntypedFormControl } from '@angular/forms';
@@ -28,7 +30,7 @@ import { FormControl } from '@angular/forms';
     exportAs     : 'fuseSearch',
     animations   : fuseAnimations,
     standalone   : true,
-    imports      : [NgIf, MatButtonModule, MatIconModule, FormsModule, MatAutocompleteModule, ReactiveFormsModule, MatOptionModule, NgFor, RouterLink, NgTemplateOutlet, MatFormFieldModule, MatInputModule, NgClass],
+    imports      : [NgIf, MatButtonModule,TranslocoModule, MatIconModule, FormsModule, MatAutocompleteModule, ReactiveFormsModule, MatOptionModule, NgFor, RouterLink, NgTemplateOutlet, MatFormFieldModule, MatInputModule, NgClass],
     providers    : [
         {
             provide   : MAT_AUTOCOMPLETE_SCROLL_STRATEGY,
@@ -63,7 +65,7 @@ export class SearchComponent implements OnChanges, OnInit, OnDestroy
         private _httpClient: HttpClient,
         private _renderer2: Renderer2,
         private proyectoService: ProyectoService,
-        
+        private translocoService: TranslocoService,
     )
     {
     }
@@ -165,19 +167,16 @@ export class SearchComponent implements OnChanges, OnInit, OnDestroy
           )
           .subscribe((value) => {
             if (value) {
-              console.log('Realizando búsqueda con valor:', value);
               this.proyectoService.searchProyectos(value)
                 .subscribe(
                   (resultSets: any) => {
                     if (resultSets && resultSets.length > 0) {
                       this.resultSets = resultSets;  // Aquí actualizamos el array de resultados
                     } else {
-                      console.log('No se encontraron proyectos en la respuesta');
                       this.resultSets = []; // Si no hay proyectos, limpiamos la lista
                     }
                   },
                   (error) => {
-                    console.error('Error en la búsqueda:', error);
                     this.resultSets = [];  // Limpia si hay error
                   }
                 );

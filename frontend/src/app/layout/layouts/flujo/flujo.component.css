@@ -1,3 +1,22 @@
+html, body {
+  height: 100%;
+  margin: 0;
+  overflow: hidden; /* Importante: oculta scroll general */
+}
+
+body {
+  display: flex;
+  flex-direction: column;
+}
+
+app-flujo {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+
 .flex {
     display: flex;
   }
@@ -151,11 +170,22 @@ mat-icon-button {
   border-radius: 4px; /* Asegúrate de que el borde sea redondeado si lo deseas */
 }
 
-.hidden-mode mat-header-cell, .moving-mode mat-cell {
+.hidden-mode mat-header-cell, .moving-mode mat-cell, .activar-mode mat-header-cell {
   cursor: move; /* Para dar la sensación de que puedes mover las filas */
 }
 
 .hidden-mode .custom-icon {
+  color: #007bff !important; /* Color del icono cuando el botón esté activado */
+}
+
+.activar-mode {
+  background-color: #e0f7fa; /* Un azul claro */
+  color: #007bff; /* Color del texto cuando esté activado */
+  border: 2px solid #007bff; /* Color del borde cuando está activado */
+  border-radius: 4px; /* Asegúrate de que el borde sea redondeado si lo deseas */
+}
+
+.activar-mode .custom-icon {
   color: #007bff !important; /* Color del icono cuando el botón esté activado */
 }
 
@@ -165,3 +195,27 @@ mat-icon-button {
 }
 
 
+.border-r {
+  border-right: 1px solid #d1d5db;
+}
+
+pre::-webkit-scrollbar {
+  height: 8px;
+}
+
+pre::-webkit-scrollbar-track {
+  background: #f1f1f1;
+}
+
+pre::-webkit-scrollbar-thumb {
+  background: #888;
+  border-radius: 4px;
+}
+
+pre::-webkit-scrollbar-thumb:hover {
+  background: #555;
+}
+
+.custom-black-icon {
+  color: black !important;
+}

@@ -11,22 +11,22 @@
         "nombre": "Nombre",
         "descripcion": "Descripción",
         "ultima_modificacion": "Última Modificación",
-        "entrsal": "E/S",
+        "entrsal": "Entradas/Salidas",
         "script": "Archivo",
         "opciones": "Opciones"
     },
     "de": "de",
     "titulo_datos": "Datos proyecto",
     "titulo_datos_operaciones": "Datos Operacion",
-    "nombreProyecto": "Nombre del Proyecto",
-    "nombreOperacion": "Nombre de la Operacion",
+    "nombreProyecto": "Nombre",
+    "nombreOperacion": "Nombre",
     "nombreRequerido": "El nombre es requerido",
-    "archivoProyecto": "Archivo del Proyecto",
-    "archivoOperacion": "Archivo de la Operacion",
+    "archivoProyecto": "Archivos",
+    "archivoOperacion": "Archivo",
     "seleccionarArchivo": "Seleccionar archivo",
     "archivoSeleccionado": "Archivo seleccionado:",
-    "descripcionProyecto": "Descripción del Proyecto",
-    "descripcionOperacion": "Descripción de la Operacion",
+    "descripcionProyecto": "Descripción",
+    "descripcionOperacion": "Descripción",
     "descripcionRequerida": "La descripción es requerida",
     "cancelar": "Cancelar",
     "enviar": "Enviar",
@@ -36,7 +36,7 @@
     "noOperationsAdded": "No hay operaciones añadidas",
     "operationName": "Nombre",
     "operationCantidad": "Cantidad",
-    "activate": "Activar",
+    "activate": "Estado",
     "executing": "Ejecutando",
     "inactive": "Inactiva",
     "search": "Buscar",
@@ -55,6 +55,7 @@
     "confirmacion_eliminacion": "¿Estás seguro de que quieres eliminar este proyecto?",
     "cancelar2": "Cancelar",
     "confirmar": "Confirmar",
+    "Eliminar": "Eliminar",
     "created": "Proyecto creado correctamente",
     "proyecto_actualizado_correctamente": "Proyecto actualizado correctamente",
     "proyecto_borrado_correctamente": "Proyecto borrado correctamente",
@@ -73,19 +74,29 @@
     "seleccionar": "Seleccionar",
     "buscar_operacion": "Buscar operaciones",
     "result_operation": "Resultados de la operación",
+    "project_not_found": "Proyecto no encontrado",
+    "operation_not_found": "Operación no encontrada",
     "modificar": {
-        "create": "Añadir Proyecto",
-        "modify": "Modificar Proyecto"
+        "create": "Añadir",
+        "modify": "Modificar"
     },
     "modificarOperacion": {
-        "create": "Añadir Operacion",
-        "modify": "Modificar Operacion"
+        "create": "Añadir ",
+        "modify": "Modificar"
     },
+    "search_placeholder": "Buscar...",
     "next":"Siguiente",
     "before":"Anterior",
     "Archivos":"Archivos",
     "guardar": "Guardar",
-    "descargar_salida": "Descargar Salida"
+    "descargar_salida": "Descargar Salida",
+    "paginator": {
+          "itemsPerPageLabel": "Ítems por página",
+          "nextPageLabel": "Página siguiente",
+          "previousPageLabel": "Página anterior",
+          "firstPageLabel": "Primera página",
+          "lastPageLabel": "Última página"
+    }
 }
 
 

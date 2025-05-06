@@ -1,19 +1,27 @@
-<div class="flex h-full w-full">
+<div class="flex h-screen w-full overflow-hidden">
+
   <!-- Panel izquierdo -->
   <div 
-    [ngClass]="{'w-full': isExpanded, 'w-1/2 border-r border-gray-300': !isExpanded}" 
-    class="transition-all duration-300 flex flex-col"
-    *ngIf="!isExpandedRight">
+    [ngClass]="{'w-full': isExpanded, 'w-1/2 border-r border-gray-300': !isExpanded}" class="transition-all duration-300 flex flex-col h-full" *ngIf="!isExpandedRight">
     <!-- Encabezado -->
-    <div class="p-4 flex items-center justify-between border-b border-gray-300">
+    <div class="p-4 flex items-center justify-between border-b border-gray-300 h-[64px]">
       <h2 class="text-lg font-bold">{{ 'dataPreprocessing' | transloco }}</h2>
       <div class="flex items-center">
         <button [disabled]="isMoveOrderMode" mat-stroked-button color="primary" (click)="openOperationsSelector()">
           {{ 'selectOperations' | transloco }}
         </button>
         <!-- Botones de ejecutar y guardar -->
-        <button [disabled]="isMoveOrderMode" mat-raised-button color="primary" (click)="executeOperationsSequentially()" class="ml-2">
-          {{ 'execute' | transloco }}
+        <button 
+          mat-flat-button
+          class="sm:inline-flex mdc-button mdc-button--unelevated mat-mdc-unelevated-button mat-primary mat-mdc-button-base ml-2"
+          mat-ripple-loader-class-name="mat-mdc-button-ripple"
+          [disabled]="isMoveOrderMode"
+          (click)="executeOperationsSequentially()">
+          
+          <mat-icon class="mat-icon notranslate icon-size-5 mat-icon-no-color" svgIcon="heroicons_outline:play"></mat-icon>
+          <span class="mdc-button__label">
+              <span class="ml-2">{{ 'execute' | transloco }}</span>
+          </span>
         </button>
         <button [disabled]="isMoveOrderMode" mat-raised-button color="accent" (click)="saveOperations()" class="ml-2">
           {{ 'guardar' | transloco }}
@@ -24,20 +32,35 @@
       </div>
     </div>
     <!-- Contenido principal -->
-    <div class="p-4 flex-1">
+    <div class="flex-1 overflow-y-auto p-4">
       <div *ngIf="addedOperations.length > 0">
         <div class="button-container">
+          <!-- Botón de Activar -->
+          <button 
+            mat-button 
+            (click)="onActivar()" 
+            class="custom-button" 
+            [ngClass]="{ 'activar-mode': activarTodo }" 
+            [disabled]="isMoveOrderMode">
+            <mat-icon class="custom-icon">{{ !activarTodo ? 'check' : 'close' }}</mat-icon>
+            {{ !activarTodo ? 'Activar' : 'Desactivar' }}
+          </button>
           <!-- Botón de Detalle -->
-          <button mat-button (click)="onEye()" class="custom-button" [ngClass]="{ 'hidden-mode': !mostrarFilasAdicionales }" [disabled]="isMoveOrderMode">
+          <button mat-button (click)="onEye()" class="custom-button" 
+            [ngClass]="{ 'hidden-mode': mostrarFilasAdicionales }" 
+            [disabled]="isMoveOrderMode">
             <mat-icon class="custom-icon">{{ mostrarFilasAdicionales ? 'visibility' : 'visibility_off' }}</mat-icon>
             {{ mostrarFilasAdicionales ? 'Esconder detalle' : 'Mostrar detalle' }}
           </button>
           <!-- Botón de Mover Orden -->
-          <button mat-button (click)="onMoveOrder()" class="custom-button" [ngClass]="{ 'moving-mode': isMoveOrderMode }">
+          <button mat-button (click)="onMoveOrder()" class="custom-button" 
+            [ngClass]="{ 'moving-mode': isMoveOrderMode }" 
+            [disabled]="activarTodo">
             <mat-icon class="custom-icon">swap_vert</mat-icon>
             {{ !isMoveOrderMode ? 'Mover Orden' : 'Desactivar Mover Orden' }}
           </button>
-          <button mat-button (click)="confirmOrder()" class="custom-button" [ngClass]="{ 'moving-mode': isMoveOrderMode }" [disabled]="!isMoveOrderMode">
+          <button *ngIf="isMoveOrderMode" mat-button (click)="confirmOrder()" class="custom-button" 
+            [ngClass]="{ 'moving-mode': isMoveOrderMode }" [disabled]="!isMoveOrderMode">
             <mat-icon class="custom-icon">check</mat-icon>
             Confirmar Orden
           </button>
@@ -105,11 +128,13 @@
                   <span *ngIf="operation.isMainRow" class="ml-2">{{ operation.salidaValue?.[0] || 'Sin salida' }}</span>
                 </ng-container>
                 <ng-template #additionalRow>
-                  <button *ngIf="operation.salidaValue?.length > 0" 
-                          mat-icon-button 
-                          (click)="downloadOutputFile(operation.salidaValue[0], proyectoDataID.nombre, proyectoDataID.id)" 
-                          aria-label="Descargar archivo">
-                    <mat-icon>download</mat-icon>
+                  <button 
+                    [disabled]="isMoveOrderMode" 
+                    *ngIf="operation.salidaValue?.[0]" 
+                    mat-icon-button 
+                    (click)="downloadOutputFile(operation.salidaValue[0], proyectoDataID.nombre, proyectoDataID.id)" 
+                    aria-label="Descargar archivo">
+                    <mat-icon class="custom-black-icon">download</mat-icon>
                   </button>
                   <span class="ml-2">{{ operation.salidaValue?.[0]}}</span>
                 </ng-template>
@@ -165,27 +190,35 @@
     </div>
   </div>
   <!-- Panel derecho -->
-  <div [ngClass]="{'w-full': isExpandedRight, 'w-1/2': !isExpandedRight}" class="transition-all duration-300" *ngIf="!isExpanded">
-    <div class="p-4 flex items-center justify-between border-b border-gray-300">
+  <div [ngClass]="{'w-full': isExpandedRight, 'w-1/2': !isExpandedRight}" class="transition-all duration-300 flex flex-col border-gray-300 h-full" *ngIf="!isExpanded">
+    <div class="p-4 flex items-center justify-between border-b border-gray-300 h-[64px]">
       <h2 class="text-lg font-bold">{{ 'result' | transloco }}</h2>
       <div class="flex items-center">
         <button mat-stroked-button color="primary" (click)="clearResults()">{{ 'clearResults' | transloco }}</button>
+        <!--
         <button mat-icon-button (click)="reloadResults()">
           <mat-icon>refresh</mat-icon>
         </button>
+      -->
         <button mat-icon-button (click)="toggleExpandRight()">
           <mat-icon>{{ isExpandedRight ? 'close_fullscreen' : 'fullscreen' }}</mat-icon>
         </button>
       </div>
     </div>
-    <div *ngIf="results.length === 0">
-      <p class="text-gray-500">{{ 'noResults' | transloco }}</p>
-    </div>
-    <div *ngIf="results.length > 0" class="mt-4">
-      <div *ngFor="let result of results">
-        <div>
-          <h3>{{ 'result_operation' | transloco }}: {{ result.operationName }}</h3>
-          <pre class="bg-gray-100 p-4 rounded">{{ result.logs }}</pre>
+    <div class="flex-1 overflow-y-auto p-4">
+      <div *ngIf="results.length === 0" class="flex items-center justify-center min-h-[300px] p-10">
+        <p class="text-gray-500 text-xl text-center font-semibold">
+          {{ 'noResults' | transloco }}
+        </p>
+      </div>
+      <div *ngIf="results.length > 0" class="mt-4">
+        <div *ngFor="let result of results">
+          <div>
+            <h3>{{ 'result_operation' | transloco }}: {{ result.operationName }}</h3>
+            <pre class="bg-gray-100 p-4 rounded overflow-x-auto whitespace-pre">
+              {{ result.logs }}
+            </pre>          
+          </div>
         </div>
       </div>
     </div>

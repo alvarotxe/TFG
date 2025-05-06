@@ -10,22 +10,22 @@
         "nombre": "Name",
         "descripcion": "Description",
         "ultima_modificacion": "Last Modified",
-        "entrsal": "E/S",
+        "entrsal": "Inputs/Outputs",
         "script": "Script",
         "opciones": "Options"
     },
     "de": "of",
     "titulo_datos": "Project Data",
     "titulo_datos_operaciones": "Operation Data",
-    "nombreProyecto": "Project Name",
-    "nombreOperacion": "Operation Name",
+    "nombreProyecto": "Name",
+    "nombreOperacion": "Name",
     "nombreRequerido": "Name is required",
-    "archivoProyecto": "Project File",
-    "archivoOperacion": "Operation File",
+    "archivoProyecto": "Files",
+    "archivoOperacion": "File",
     "seleccionarArchivo": "Select File",
     "archivoSeleccionado": "Selected File:",
-    "descripcionProyecto": "Project Description",
-    "descripcionOperacion": "Operation Description",
+    "descripcionProyecto": "Description",
+    "descripcionOperacion": "Description",
     "descripcionRequerida": "Description is required",
     "cancelar": "Cancel",
     "enviar": "Submit",
@@ -35,7 +35,7 @@
     "noOperationsAdded": "No operations added",
     "operationName": "Name",
     "operationCantidad": "Quantity",
-    "activate": "Activate",
+    "activate": "State",
     "executing": "Executing",
     "inactive": "Inactive",
     "search": "Search",
@@ -54,6 +54,7 @@
     "confirmacion_eliminacion": "Are you sure you want to delete this project?",
     "cancelar2": "Cancel",
     "confirmar": "Confirm",
+    "Eliminar": "Delete",
     "created": "Project created successfully",
     "proyecto_actualizado_correctamente": "Project updated successfully",
     "proyecto_borrado_correctamente": "Project deleted successfully",
@@ -73,16 +74,26 @@
     "buscar_operacion": "Search operations",
     "result_operation": "Operation Results",
     "modificar": {
-        "create": "Create Project",
-        "modify": "Modify Project"
+        "create": "Create",
+        "modify": "Modify"
     },
     "modificarOperacion": {
-        "create": "Create Operation",
-        "modify": "Modify Operation"
+        "create": "Create",
+        "modify": "Modify"
     },
+    "search_placeholder": "Search...",
+    "project_not_found": "Project not found",
+    "operation_not_found": "Operation not found",
     "next":"Next",
     "before":"Previous",
     "Archivos":"Files",
     "guardar": "Save",
-    "descargar_salida": "Download Output"
+    "descargar_salida": "Download Output",
+    "paginator": {
+          "itemsPerPageLabel": "Items per page",
+          "nextPageLabel": "Next Page",
+          "previousPageLabel": "Previous page",
+          "firstPageLabel": "Fisrt page",
+          "lastPageLabel": "Last page"
+    }
 }

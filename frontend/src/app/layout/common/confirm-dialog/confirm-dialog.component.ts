@@ -17,11 +17,11 @@ import { MatIconModule } from '@angular/material/icon';
 </div>
 
 <div mat-dialog-actions class="action-buttons">
-  <button mat-raised-button color="warn" (click)="onClose('cancel')" class="cancel-btn">
+  <button mat-raised-button color="primary" (click)="onClose('cancel')" class="cancel-btn">
     <mat-icon>cancel</mat-icon> {{ 'cancelar' | transloco }}
   </button>
-  <button mat-raised-button color="primary" (click)="onClose('confirm')" class="confirm-btn">
-    <mat-icon>check_circle</mat-icon> {{ 'confirmar' | transloco }}
+  <button mat-raised-button color="warn" (click)="onClose('confirm')" class="confirm-btn">
+    <mat-icon>check_circle</mat-icon> {{ 'Eliminar' | transloco }}
   </button>
 </div>
   `,

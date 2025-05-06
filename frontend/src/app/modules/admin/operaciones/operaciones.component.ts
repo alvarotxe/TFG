@@ -19,6 +19,8 @@ import { MatTableDataSource } from '@angular/material/table';
 import { MatPaginator } from '@angular/material/paginator';
 import { OperationsService } from '../../../services/operations.service';
 import { SearchComponent } from 'app/layout/common/search/search.component';
+import { CustomMatPaginatorIntl } from '../../../../assets/i18n/custom-paginator-intl';
+import { MatPaginatorIntl } from '@angular/material/paginator';
 import { RouterLink } from '@angular/router';
 import { Router } from '@angular/router';
 import { of } from 'rxjs';
@@ -31,13 +33,16 @@ import { catchError, map, tap } from 'rxjs/operators';
     styleUrls: ['./operaciones.component.scss'],
     encapsulation: ViewEncapsulation.None,
     imports      : [CdkScrollable, MatSidenavModule,TranslocoModule, ReactiveFormsModule,MatFormFieldModule,MatSnackBarModule,CommonModule,MatDialogModule,MatIconModule,MatPaginatorModule, RouterLink,MatTableModule, MatButtonModule,SearchComponent],
+    providers: [
+      { provide: MatPaginatorIntl, useClass: CustomMatPaginatorIntl } 
+    ]
 })
 export class OperacionesComponent implements AfterViewInit
 {
   operacionesData: any[] = [];
   dataSource: any = { data: [] };
   pageIndex: number = 0;
-  pageSize: number = 7;
+  pageSize: number = 10;
   totalPages: number = 1;
   @ViewChild(MatPaginator) paginator: MatPaginator;
   @ViewChild(SearchComponent) searchComponent: SearchComponent;
@@ -95,32 +100,39 @@ export class OperacionesComponent implements AfterViewInit
       this.updateTableData();
     }
   }
-  
+
   onSearch(query: string): void {
     if (query) {
-      this.operacionService.searchOperacion(query).pipe(
-        map((resultSets: any[]) => resultSets || []), // Asegurar que no sea null o undefined
-        tap((resultSets) => {
-          if (resultSets.length > 0) {
-            this.operacionesData = resultSets;
-            this.updateTableData();
-          } else {
-            this.snackBar.open('No se encontraron operaciones', 'Cerrar', { duration: 3000 });
-          }
-        }),
-        catchError((error) => {
-          console.error('Error al buscar operaciones:', error);
-          this.snackBar.open('No se encontraron operaciones', 'Cerrar', { duration: 3000 });
-          return of([]); // Retornar un array vacío para evitar errores posteriores
-        })
-      ).subscribe();
+      console.log(this.operacionesData);
+      // Filtrar los proyectos según el nombre o la descripción
+      const filteredProyectos = this.operacionesData.filter((proyecto) =>
+        proyecto.operacion.toLowerCase().includes(query.toLowerCase()) ||
+        proyecto.descripcion.toLowerCase().includes(query.toLowerCase())
+      );
+      
+      if (filteredProyectos.length > 0) {
+        this.operacionesData = filteredProyectos;
+        this.updateTableData();
+      } else {
+        const message = this.translocoService.translate('operation_not_found');
+        this.snackBar.open(message, 'Cerrar', { duration: 3000 });
+        this.operacionesData = [];  // Vaciar la tabla si no hay resultados
+        this.updateTableData();  // Actualizar la tabla (vacía)
+      }
     } else {
-      this.loadProyectos();
+      // Si no hay texto de búsqueda, recargamos todos los proyectos
+      this.loadProyectos();  // Recargamos todos los proyectos
     }
-  }
+  }  
 
   onSearchQuery(query: string): void {
     this.onSearch(query);  // Llamamos al método onSearch con el query recibido
+  }
+
+  onPaginatorChange(event: any): void {
+    this.pageIndex = event.pageIndex;
+    this.pageSize = event.pageSize;
+    this.updateTableData();
   }
 
   onAnyadirProyecto(){
